@@ -1,10 +1,10 @@
 # Use an official Python runtime as a parent image
-FROM python:3.9-slim
+FROM python:3.9-alpine
 
 # Set the working directory
-WORKDIR /usr/src/app
+WORKDIR /omdb_adapter
 
-# Copy the current directory contents into the container at /usr/src/app
+# Copy the current directory contents into the container at /omdb_adapter
 COPY . .
 
 # Install any needed packages specified in requirements.txt
