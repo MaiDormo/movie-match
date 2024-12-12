@@ -102,3 +102,5 @@ dmypy.json
 .pyre/
 
 parse_movie_data.py
+
+slim.report.json
