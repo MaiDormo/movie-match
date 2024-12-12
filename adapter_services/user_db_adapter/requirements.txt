@@ -1,5 +1,0 @@
-Flask
-pymongo
-pydantic
-passlib[bcrypt]
-email-validator

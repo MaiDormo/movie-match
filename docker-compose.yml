@@ -1,25 +1,6 @@
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
-  user-db-adapter:
-    build:
-      context: ./adapter_services/user_db_adapter
-    container_name: user-db-adapter
-    ports:
-      - "5000:5000"
-    depends_on:
-      - mongodb
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017/userdb
-
   omdb-adapter:
     build:
       context: ./adapter_services/omdb_adapter
