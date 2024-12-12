@@ -1,19 +1,31 @@
 import os
-from flask import Flask, jsonify
-from routes.omdb_routes import omdb_bp
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from routes.omdb_routes import router as omdb_router
 
-app = Flask(__name__)
+app = FastAPI(
+    title="OMDB API Adapter",
+    description="An adapter service for OMDB API using FastAPI",
+    version="1.0.0"
+)
 
-app.register_blueprint(omdb_bp)
+app.include_router(omdb_router)
 
-@app.errorhandler(405)
-def method_not_allowed(e):
-    response = {
-        "status": "error",
-        "code": 405,
-        "message": "Method not allowed"
-    }
-    return jsonify(response), 405
+@app.exception_handler(405)
+async def method_not_allowed(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=405,
+        content={"status": "error", "code": 405, "message": "Method not allowed"},
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"status": "error", "code": 422, "message": "Validation error", "details": exc.errors()},
+    )
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
