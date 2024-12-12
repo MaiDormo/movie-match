@@ -30,6 +30,17 @@ services:
       - .env
     environment:
       - OMDB_API_KEY=${OMDB_API_KEY}
+    
+  streaming-availability-adapter:
+    build:
+      context: ./adapter_services/streaming_availability_adapter
+    container_name: streaming-availability-adapter
+    ports:
+      - "5002:5000"
+    env_file:
+      - .env
+    environment:
+      - STREAMING_AVAILABILITY_API_KEY=${STREAMING_AVAILABILITY_API_KEY}
 
 volumes:
   mongo-data:
