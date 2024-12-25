@@ -17,22 +17,22 @@ class OMDBAdapterTestCase(unittest.TestCase):
         self.assertIn('OMDB API Adapter is up and running!', response.json().get('message'))
 
     def test_get_movies_no_title(self):
-        response = client.get('/api/v1/movies')
+        response = client.get('/api/v1/search')
         self.assertEqual(response.status_code, 422)
         self.assertIn('Validation error', response.json().get('message'))
 
     def test_get_movies_with_title(self):
-        response = client.get('/api/v1/movies?title=Inception')
+        response = client.get('/api/v1/search?title=Inception')
         self.assertEqual(response.status_code, 200)
         self.assertIn('Title', response.json())
 
     def test_get_movie_id_no_id(self):
-        response = client.get('/api/v1/movie')
+        response = client.get('/api/v1/find')
         self.assertEqual(response.status_code, 422)
         self.assertIn('Validation error', response.json().get('message'))
 
     def test_get_movie_id_with_id(self):
-        response = client.get('/api/v1/movie?id=tt1375666')
+        response = client.get('/api/v1/find?id=tt1375666')
         self.assertEqual(response.status_code, 200)
         self.assertIn('Title', response.json())
 

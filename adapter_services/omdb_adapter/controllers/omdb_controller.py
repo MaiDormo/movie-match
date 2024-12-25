@@ -16,7 +16,7 @@ def handle_error(e, status_code, message):
         "status": "error",
         "code": status_code,
         "message": message,
-        "error": str(e) if e else None
+        "error": str(e)
     }
     return JSONResponse(content=response, status_code=status_code)
 
@@ -43,7 +43,7 @@ async def get_movies(title: str = Query(...), settings: Settings = Depends(get_s
 
         return JSONResponse(content=movies, status_code=200)
     except requests.exceptions.HTTPError as e:
-        return handle_error(e, response.status_code, "HTTP error occurred")
+        return handle_error(e, 404, "HTTP error occurred")
     except requests.exceptions.ConnectionError as e:
         return handle_error(e, 503, "Connection error occurred")
     except requests.exceptions.Timeout as e:

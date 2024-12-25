@@ -14,7 +14,7 @@ RUN rm -rf ./test
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Make port 5000 available to the world outside this container
-EXPOSE 5001
+EXPOSE 5000
 
 # Define environment variable
 ENV PORT=5000
