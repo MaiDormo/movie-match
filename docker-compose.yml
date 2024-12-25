@@ -22,6 +22,17 @@ services:
       - .env
     environment:
       - STREAMING_AVAILABILITY_API_KEY=${STREAMING_AVAILABILITY_API_KEY}
+    
+  tmdb-adapter:
+    build:
+      context: ./adapter_services/tmdb_adapter
+    container_name: tmdb-adapter
+    ports:
+      - "5003:5000"
+    env_file:
+      - .env
+    environment:
+      - TMDB_API_KEY=${TMDB_API_KEY}
 
 volumes:
   mongo-data:
