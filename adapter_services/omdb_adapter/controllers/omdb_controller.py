@@ -1,14 +1,8 @@
-from fastapi import Depends
+from fastapi import Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import os
 import requests
-
-class MovieQuery(BaseModel):
-    t: str
-
-class MovieIDQuery(BaseModel):
-    i: str
 
 class Settings(BaseModel):
     omdb_url: str = "http://www.omdbapi.com/"
@@ -22,20 +16,23 @@ def handle_error(e, status_code, message):
         "status": "error",
         "code": status_code,
         "message": message,
-        "error": str(e)
+        "error": str(e) if e else None
     }
     return JSONResponse(content=response, status_code=status_code)
 
-async def get_movies(query: MovieQuery, settings: Settings = Depends(get_settings)):
+def make_request(url, params):
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    return response.json()
+
+async def get_movies(title: str = Query(...), settings: Settings = Depends(get_settings)):
     params = {
         "apikey": settings.omdb_api_key,
-        "t": query.t,
+        "t": title,
     }
     
     try:
-        response = requests.get(settings.omdb_url, params=params)
-        response.raise_for_status()
-        movies = response.json()
+        movies = make_request(settings.omdb_url, params=params)
         
         if 'Error' in movies:
             response = {
@@ -43,8 +40,8 @@ async def get_movies(query: MovieQuery, settings: Settings = Depends(get_setting
                 "message": movies['Error']
             }
             return JSONResponse(content=response, status_code=404)
-        
-        return JSONResponse(content=movies)
+
+        return JSONResponse(content=movies, status_code=200)
     except requests.exceptions.HTTPError as e:
         return handle_error(e, response.status_code, "HTTP error occurred")
     except requests.exceptions.ConnectionError as e:
@@ -54,16 +51,14 @@ async def get_movies(query: MovieQuery, settings: Settings = Depends(get_setting
     except requests.exceptions.RequestException as e:
         return handle_error(e, 500, "An error occurred while calling the OMDB API")
 
-async def get_movie_id(query: MovieIDQuery, settings: Settings = Depends(get_settings)):
+async def get_movie_id(id: str = Query(...), settings: Settings = Depends(get_settings)):
     params = {
         "apikey": settings.omdb_api_key,
-        "i": query.i,
+        "i": id,
     }
     
     try:
-        response = requests.get(settings.omdb_url, params=params)
-        response.raise_for_status()
-        movie = response.json()
+        movie = make_request(settings.omdb_url, params=params)
         
         if 'Error' in movie:
             response = {

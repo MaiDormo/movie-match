@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends
-from controllers.omdb_controller import get_movie_id, get_movies, health_check, MovieQuery, MovieIDQuery
+from fastapi import APIRouter
+from controllers.omdb_controller import get_movie_id, get_movies, health_check
 
 router = APIRouter()
 
