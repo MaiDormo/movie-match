@@ -1,7 +1,7 @@
-from flask import Blueprint
+from fastapi import APIRouter
 from controllers.streaming_availability_controller import get_movie_availability, health_check
 
-streaming_availability_bp = Blueprint("streaming_availability_bp", __name__)
+router = APIRouter()
 
-streaming_availability_bp.route("/", methods=["GET"])(health_check)
-streaming_availability_bp.route("/api/v1/avail", methods=["GET"])(get_movie_availability)
+router.get("/", response_model=dict)(health_check)
+router.get("/api/v1/avail", response_model=dict)(get_movie_availability)

@@ -22,7 +22,7 @@ class OMDBAdapterTestCase(unittest.TestCase):
         self.assertIn('Validation error', response.json().get('message'))
 
     def test_get_movies_with_title(self):
-        response = client.get('/api/v1/movies?t=Inception')
+        response = client.get('/api/v1/movies?title=Inception')
         self.assertEqual(response.status_code, 200)
         self.assertIn('Title', response.json())
 
@@ -32,7 +32,7 @@ class OMDBAdapterTestCase(unittest.TestCase):
         self.assertIn('Validation error', response.json().get('message'))
 
     def test_get_movie_id_with_id(self):
-        response = client.get('/api/v1/movie?i=tt1375666')
+        response = client.get('/api/v1/movie?id=tt1375666')
         self.assertEqual(response.status_code, 200)
         self.assertIn('Title', response.json())
 

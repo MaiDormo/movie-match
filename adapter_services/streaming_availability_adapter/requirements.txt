@@ -1,2 +1,4 @@
-Flask
+fastapi
 requests
+uvicorn
+pydantic
