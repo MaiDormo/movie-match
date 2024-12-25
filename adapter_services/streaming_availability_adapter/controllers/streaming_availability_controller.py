@@ -6,7 +6,7 @@ import requests
 
 class Settings(BaseModel):
     stream_avail_url: str = "https://streaming-availability.p.rapidapi.com/shows/search/title"
-    stream_avail_api_key: str = os.getenv("stream_avail_API_KEY")
+    stream_avail_api_key: str = os.getenv("STREAMING_AVAILABILITY_API_KEY")
     stream_avail_host: str = "streaming-availability.p.rapidapi.com"
 
 def get_settings():
@@ -54,7 +54,7 @@ async def get_movie_availability(
     params = {"country": country, "title": title}
 
     try:
-        stream_avail_data = make_stream_request(settings.stream_avail_url, headers, params)
+        stream_avail_data = make_stream_request(settings.stream_avail_url,headers,params)
         if 'Error' in stream_avail_data:
             return handle_error(None, 404, stream_avail_data['Error'])
         result = filter_data(stream_avail_data, country)
