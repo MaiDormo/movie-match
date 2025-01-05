@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dettagli Film</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+
+        .poster {
+            max-width: 300px;
+            margin: 20px auto;
+        }
+
+        .details {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Dettagli Film</h1>
+    <div class="details">
+        <h2 id="title">Titolo: ---</h2>
+        <p id="year">Anno: ---</p>
+        <p id="director">Regista/i: ---</p>
+    </div>
+    <img id="poster" class="poster" src="" alt="Poster del film">
+    <script>
+        // Funzione per ottenere i dati del film
+        async function fetchMovieDetails(movieId) {
+            try {
+                const url = `http://localhost:5001/api/v1/find?id=${movieId}`;
+
+                // Mostra l'URL in un popup
+                alert(`URL della richiesta: ${url}`);
+
+                const response = await fetch(url);
+                const movie = await response.json();
+
+                // Aggiorna i dettagli nel DOM
+                document.getElementById("title").textContent = `Titolo: ${movie.Title}`;
+                document.getElementById("year").textContent = `Anno: ${movie.Year}`;
+                document.getElementById("director").textContent = `Regista/i: ${movie.Director}`;
+                document.getElementById("poster").src = movie.Poster;
+            } catch (error) {
+                console.error("Errore durante il recupero dei dettagli del film:", error);
+                alert("Impossibile ottenere i dettagli del film.");
+            }
+        }
+
+
+        // Specifica l'ID del film da cercare
+        const movieId = "tt0317219"; // Cambia con l'ID del film che vuoi cercare
+        fetchMovieDetails(movieId);
+    </script>
+</body>
+
+</html>

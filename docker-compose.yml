@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   omdb-adapter:
     build:
@@ -11,6 +9,22 @@ services:
       - .env
     environment:
       - OMDB_API_KEY=${OMDB_API_KEY}
+    volumes:
+      - ./adapter_services/omdb_adapter:/omdb_adapter 
+     
+  spotify-adapter:
+    build:
+      context: ./adapter_services/spotify_adapter
+    container_name: spotify-adapter
+    ports:
+      - "5004:5000"
+    env_file:
+      - .env
+    environment:
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+    volumes:
+      - ./adapter_services/spotify_adapter:/spotify_adapter 
     
   streaming-availability-adapter:
     build:
@@ -22,6 +36,8 @@ services:
       - .env
     environment:
       - STREAMING_AVAILABILITY_API_KEY=${STREAMING_AVAILABILITY_API_KEY}
+    volumes:
+      - ./adapter_services/streaming_availability_adapter:/streaming_availability_adapter 
     
   tmdb-adapter:
     build:
@@ -33,6 +49,30 @@ services:
       - .env
     environment:
       - TMDB_API_KEY=${TMDB_API_KEY}
+    volumes:
+      - ./adapter_services/tmdb_adapter:/tmdb_adapter 
+
+  interface-prova:
+    build:
+      context: ./interface_prova
+    container_name: interface-prova
+    ports:
+      - "5005:5000"
+    env_file:
+      - .env
+    volumes:
+      - ./interface_prova:/interface_prova
+
+  movie-details-interface:
+    build:
+      context: ./frontend/movie_details
+    container_name: movie-details-interface
+    ports:
+      - "5006:5000"
+    env_file:
+      - .env
+    volumes:
+      - ./frontend/movie_details:/movie_details
 
 volumes:
   mongo-data:
