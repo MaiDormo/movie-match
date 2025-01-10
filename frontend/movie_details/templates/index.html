@@ -5,40 +5,104 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dettagli Film</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #fff; /* default white background */
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             text-align: center;
+            transition: background 0.5s ease;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            padding: 20px;
+            transition: transform 0.3s ease;
         }
 
         .poster {
-            max-width: 300px;
-            margin: 20px auto;
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .poster:hover {
+            transform: scale(1.05);
+        }
+
+        h1 {
+            color: #ff6a5f;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        h2, p {
+            font-size: 1.2em;
+            margin: 5px 0;
+            color: #555;
         }
 
         .details {
             margin: 20px 0;
         }
+
+        .details p {
+            font-weight: bold;
+        }
+
+        .details span {
+            font-weight: normal;
+            color: #333;
+        }
+
+        /* Media Queries for responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                width: 90%;
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            h2, p {
+                font-size: 1em;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <h1>Dettagli Film</h1>
-    <div class="details">
-        <h2 id="title">Titolo: ---</h2>
-        <p id="year">Anno: ---</p>
-        <p id="director">Regista/i: ---</p>
+    <div class="container">
+        <h1>Dettagli Film</h1>
+        <div class="details">
+            <h2 id="title">Titolo: ---</h2>
+            <p id="year">Anno: ---</p>
+            <p id="director">Regista/i: ---</p>
+        </div>
+        <img id="poster" class="poster" src="" alt="Poster del film">
     </div>
-    <img id="poster" class="poster" src="" alt="Poster del film">
+
     <script>
         // Funzione per ottenere i dati del film
         async function fetchMovieDetails(movieId) {
             try {
                 const url = `http://localhost:5001/api/v1/find?id=${movieId}`;
-
-                // Mostra l'URL in un popup
-                alert(`URL della richiesta: ${url}`);
 
                 const response = await fetch(url);
                 const movie = await response.json();
@@ -48,15 +112,47 @@
                 document.getElementById("year").textContent = `Anno: ${movie.Year}`;
                 document.getElementById("director").textContent = `Regista/i: ${movie.Director}`;
                 document.getElementById("poster").src = movie.Poster;
+
+                // Aggiungi un gradiente dinamico
+                updateBackground(movie.Poster);
             } catch (error) {
                 console.error("Errore durante il recupero dei dettagli del film:", error);
                 alert("Impossibile ottenere i dettagli del film.");
             }
         }
 
+        // Funzione per aggiornare lo sfondo con un gradiente dai colori principali
+        function updateBackground(posterUrl) {
+            const img = new Image();
+            img.src = posterUrl;
+            img.crossOrigin = "Anonymous";  // Aggiungi questa riga per consentire l'accesso CORS
 
-        // Specifica l'ID del film da cercare
-        const movieId = "tt0317219"; // Cambia con l'ID del film che vuoi cercare
+            img.onload = function() {
+                const colorThief = new ColorThief();
+                try {
+                    const palette = colorThief.getPalette(img, 2); // Prendi 2 colori principali
+
+                    if (palette && palette.length >= 2) {
+                        const [color1, color2] = palette;
+                        const gradient = `linear-gradient(135deg, rgb(${color1.join(',')}) , rgb(${color2.join(',')}))`;
+
+                        document.body.style.background = gradient;
+                    }
+                } catch (error) {
+                    console.error("Errore nell'estrazione dei colori:", error);
+                }
+            };
+
+            img.onerror = function() {
+                console.error("Impossibile caricare l'immagine.");
+            };
+        }
+
+        // Specifica l'ID del film da cercare 
+        //const movieId = "tt1375666"; // Cambia con l'ID del film che vuoi cercare // INCEPTION
+        // const movieId = "tt0317219"; // Cambia con l'ID del film che vuoi cercare // CARS
+        //const movieId = "tt0120338"; // Cambia con l'ID del film che vuoi cercare // TITANIC
+         const movieId = "tt1679335"; // Cambia con l'ID del film che vuoi cercare // TROLLS
         fetchMovieDetails(movieId);
     </script>
 </body>

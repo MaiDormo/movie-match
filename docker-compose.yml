@@ -74,5 +74,18 @@ services:
     volumes:
       - ./frontend/movie_details:/movie_details
 
+  groq-adapter:
+    build:
+      context: ./adapter_services/groq_adapter
+    container_name: groq-adapter
+    ports:
+      - "5007:5000"
+    env_file:
+      - .env
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    volumes:
+      - ./adapter_services/groq_adapter:/groq_adapter 
+
 volumes:
   mongo-data:
