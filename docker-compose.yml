@@ -33,6 +33,18 @@ services:
       - .env
     environment:
       - TMDB_API_KEY=${TMDB_API_KEY}
+  
+  user-db-adapter:
+    build:
+      context: ./adapter_services/user_db_adapter
+    container_name: user-db-adapter
+    ports:
+      - "5008:5000"
+    env_file:
+      - .env
+    environment:
+      - ATLAS_URI=${ATLAS_URI}
+      - DB_NAME=${DB_NAME}
 
 volumes:
   mongo-data:
