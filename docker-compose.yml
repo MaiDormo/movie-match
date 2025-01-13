@@ -57,5 +57,14 @@ services:
     environment:
       - ABSTRACT_API_KEY=${ABSTRACT_API_KEY}
 
+  valid-email-service:
+    build:
+      context: ./business_logic_services/valid_email_service
+    container_name: valid-email-service
+    ports:
+      - "5010:5000"
+    depends_on:
+      - email-check-adapter
+    
 volumes:
-  mongo-data:
+  movie-match:

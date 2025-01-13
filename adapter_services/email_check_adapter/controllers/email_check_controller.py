@@ -43,25 +43,21 @@ async def check_email(email: str = Query(...), settings: Settings = Depends(get_
         data = response.json()
     except ValueError as json_err:
         raise HTTPException(status_code=500, detail=f"JSON decoding error: {json_err}")
-    
-    if data["deliverability"] == "UNDELIVERABLE":
-        cause = {
-            "email": f"The email provided '{data['email']}' is not in the correct format"
-        } if data["is_valid_format"]["text"] == "FALSE" else {
-            "email": f"The email provided '{data['email']}' cannot be found"
-        }
-        
-        response = {
-            "status": "fail",
-            "data": cause
-        }
-        return JSONResponse(content=response, status_code=400)
 
     response = {
         "status": "success",
         "message": "Email check retrieved successfully",
         "data": {
-            "email_check": data
+            "email_check": filter_response(data)
         }
     }
     return JSONResponse(content=response, status_code=200)
+
+
+def filter_response(data):
+    filtered_response = {
+        "email": data["email"],
+        "deliverability": data["deliverability"],
+        "is_valid_format": data["is_valid_format"]["text"]
+    }
+    return filtered_response
