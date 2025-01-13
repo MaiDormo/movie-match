@@ -11,13 +11,11 @@ class MovieGenre(str, Enum):
     SCIFI = "sci-fi"
     #TODO! add more
 
-
-
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), alias="_id")
     name: str = Field(..., min_length=2, description="Name must be at least 2 characters long")
     surname: str = Field(..., min_length=2, description="Surname must be at least 2 characters long")
-    email: EmailStr = Field(..., description="Must be a valid email address")
+    email: str = Field(..., description="Must be a valid email address")
     preferences: List[MovieGenre] = Field(..., description="List of preferred movie genres")
     password: str = Field(..., min_length=8, description="Password must be at least 8 characters long")
 
