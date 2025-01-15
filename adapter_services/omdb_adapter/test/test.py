@@ -22,7 +22,7 @@ class OMDBAdapterTestCase(unittest.TestCase):
         self.assertIn('Validation error', response.json().get('message'))
 
     def test_get_movies_with_title(self):
-        response = client.get('/api/v1/search?title=inception')
+        response = client.get('/api/v1/search?title=Inception')
         self.assertEqual(response.status_code, 200)
         self.assertIn('Title', response.json())
 

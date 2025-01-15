@@ -12,52 +12,58 @@
             font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
-            background: #fff; /* default white background */
+            background: #fff;
             color: #333;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             height: 100vh;
             text-align: center;
             transition: background 0.5s ease;
+            padding-top: 30px;
+            /* Per evitare che le sezioni siano troppo in alto */
         }
 
         .container {
+            display: flex;
+            justify-content: space-between;
+            gap: 40px;
+            width: 80%;
+            max-width: 1400px;
+        }
+
+        .movie-details,
+        .trivia {
+            flex: 1;
+            min-width: 300px;
+            padding: 30px;
             background-color: white;
             border-radius: 15px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 600px;
-            padding: 20px;
-            transition: transform 0.3s ease;
         }
 
         .poster {
-            max-width: 100%;
+            width: 300px;
+            /* Larghezza fissa */
+            height: 450px;
+            /* Altezza fissa */
+            object-fit: cover;
+            /* Assicurati che l'immagine mantenga la proporzione e non distorca */
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             margin-bottom: 20px;
-            transition: transform 0.3s ease;
         }
 
-        .poster:hover {
-            transform: scale(1.05);
-        }
 
         h1 {
             color: #ff6a5f;
             margin-bottom: 20px;
-            font-size: 2em;
         }
 
-        h2, p {
+        h2,
+        p {
             font-size: 1.2em;
             margin: 5px 0;
-            color: #555;
-        }
-
-        .details {
-            margin: 20px 0;
         }
 
         .details p {
@@ -69,19 +75,64 @@
             color: #333;
         }
 
-        /* Media Queries for responsiveness */
+        .trivia {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            width: 350px;
+            /* Larghezza fissa */
+            max-height: 350px;
+            /* Altezza fissa con un po' di spazio per il feedback */
+            overflow: auto;
+            /* Barra di scorrimento sempre visibile */
+            margin-top: 0;
+        }
+
+        /* Overwrite the default to keep the scrollbar always visible */
+        ::-webkit-scrollbar {
+            -webkit-appearance: none;
+            width: 7px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            border-radius: 4px;
+            background-color: rgba(0, 0, 0, .5);
+            -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+        }
+
+        .trivia button {
+            margin: 5px;
+            /* Spazio tra i bottoni */
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #ff6a5f;
+            color: white;
+        }
+
+        .trivia button:hover {
+            background-color: #ff4a3f;
+        }
+
+        .trivia p {
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+
+        /* Media Queries */
         @media (max-width: 768px) {
             .container {
-                width: 90%;
-                padding: 15px;
+                flex-direction: column;
+                align-items: center;
             }
 
-            h1 {
-                font-size: 1.8em;
-            }
-
-            h2, p {
-                font-size: 1em;
+            .movie-details,
+            .trivia {
+                width: 100%;
+                /* Full width on small screens */
+                max-width: 100%;
+                /* Ensure they do not exceed the screen width */
             }
         }
     </style>
@@ -89,70 +140,122 @@
 
 <body>
     <div class="container">
-        <h1>Dettagli Film</h1>
-        <div class="details">
-            <h2 id="title">Titolo: ---</h2>
-            <p id="year">Anno: ---</p>
-            <p id="director">Regista/i: ---</p>
+        <div class="movie-details">
+            <h1>Dettagli Film</h1>
+            <div class="details">
+                <h2 id="title">Titolo: ---</h2>
+                <p id="year">Anno: ---</p>
+                <p id="director">Regista/i: ---</p>
+            </div>
+            <img id="poster" class="poster" src="" alt="Poster del film">
         </div>
-        <img id="poster" class="poster" src="" alt="Poster del film">
+
+        <div class="trivia">
+            <h1>Trivia</h1>
+            <p id="question">Caricamento domanda...</p>
+            <div id="options">
+                <button onclick="checkAnswer(1)">1</button>
+                <button onclick="checkAnswer(2)">2</button>
+                <button onclick="checkAnswer(3)">3</button>
+            </div>
+            <p id="feedback" style="font-weight: bold; margin-top: 10px;"></p>
+        </div>
     </div>
 
     <script>
-        // Funzione per ottenere i dati del film
         async function fetchMovieDetails(movieId) {
             try {
                 const url = `http://localhost:5001/api/v1/find?id=${movieId}`;
-
                 const response = await fetch(url);
                 const movie = await response.json();
-
-                // Aggiorna i dettagli nel DOM
+    
+                // Aggiorna i dettagli del film
                 document.getElementById("title").textContent = `Titolo: ${movie.Title}`;
                 document.getElementById("year").textContent = `Anno: ${movie.Year}`;
                 document.getElementById("director").textContent = `Regista/i: ${movie.Director}`;
-                document.getElementById("poster").src = movie.Poster;
-
-                // Aggiungi un gradiente dinamico
-                updateBackground(movie.Poster);
+    
+                // Usa l'immagine fornita da movie.Poster
+                const posterUrl = movie.Poster;
+                document.getElementById("poster").src = posterUrl;
+    
+                // Aggiorna il background
+                updateBackground(posterUrl);
+    
+                // Ottieni la domanda trivia
+                fetchTrivia(movie.Title);
             } catch (error) {
                 console.error("Errore durante il recupero dei dettagli del film:", error);
-                alert("Impossibile ottenere i dettagli del film.");
             }
         }
-
-        // Funzione per aggiornare lo sfondo con un gradiente dai colori principali
+    
+        // Modifica sfondo in base ai colori del poster
         function updateBackground(posterUrl) {
             const img = new Image();
-            img.src = posterUrl;
-            img.crossOrigin = "Anonymous";  // Aggiungi questa riga per consentire l'accesso CORS
-
-            img.onload = function() {
+            img.src = posterUrl + "?not-from-cache-please"; // Aggiungi il parametro per evitare la cache
+            img.crossOrigin = "Anonymous";
+            img.onload = function () {
                 const colorThief = new ColorThief();
                 try {
-                    const palette = colorThief.getPalette(img, 2); // Prendi 2 colori principali
-
+                    const palette = colorThief.getPalette(img, 2); // Estrai i colori
                     if (palette && palette.length >= 2) {
                         const [color1, color2] = palette;
-                        const gradient = `linear-gradient(135deg, rgb(${color1.join(',')}) , rgb(${color2.join(',')}))`;
-
-                        document.body.style.background = gradient;
+                        document.body.style.background = `linear-gradient(135deg, rgb(${color1.join(',')}) , rgb(${color2.join(',')}))`;
                     }
                 } catch (error) {
                     console.error("Errore nell'estrazione dei colori:", error);
                 }
             };
-
-            img.onerror = function() {
-                console.error("Impossibile caricare l'immagine.");
-            };
+        }
+    
+        // Trivia handling (nessuna modifica necessaria qui)
+        async function fetchTrivia(movieTitle) {
+            try {
+                // MOCK CALL
+                const trivia = {
+                    "status": "success",
+                    "ai_question": "In the 2016 animated film 'Trolls', what is the name of the troll who is overly cautious and pessimistic, serving as a foil to Poppy's optimism? \n1. Biggie\n2. Creek\n3. Branch\n\n",
+                    "ai_answer": "3"
+                };
+    
+                if (trivia.status === "success") {
+                    const formattedQuestion = trivia.ai_question.replace(/\n/g, "<br>");
+                    document.getElementById("question").innerHTML = formattedQuestion;
+                    window.correctAnswer = trivia.ai_answer;
+                } else {
+                    document.getElementById("question").textContent = "Nessuna domanda trovata.";
+                }
+            } catch (error) {
+                console.error("Errore durante il recupero della trivia:", error);
+            }
+        }
+    
+        function checkAnswer(selected) {
+            const feedback = document.getElementById("feedback");
+            const buttons = document.querySelectorAll(".trivia button");
+    
+            buttons.forEach(button => {
+                button.disabled = true;
+            });
+    
+            const selectedButton = buttons[selected - 1];
+            selectedButton.style.backgroundColor = "#d35400";
+            selectedButton.style.color = "white";
+    
+            if (String(selected) === window.correctAnswer) {
+                feedback.textContent = "Risposta corretta!";
+                feedback.style.color = "green";
+            } else {
+                feedback.textContent = `Risposta sbagliata. Quella corretta è: ${window.correctAnswer}`;
+                feedback.style.color = "red";
+            }
         }
 
-        // Specifica l'ID del film da cercare 
-        //const movieId = "tt1375666"; // Cambia con l'ID del film che vuoi cercare // INCEPTION
-        // const movieId = "tt0317219"; // Cambia con l'ID del film che vuoi cercare // CARS
-        //const movieId = "tt0120338"; // Cambia con l'ID del film che vuoi cercare // TITANIC
-         const movieId = "tt1679335"; // Cambia con l'ID del film che vuoi cercare // TROLLS
+    
+
+        // const movieId = "tt1375666"; // Cambia con l'ID del film che vuoi cercare // INCEPTION
+        //const movieId = "tt0317219"; // Cambia con l'ID del film che vuoi cercare // CARS
+        // const movieId = "tt0120338"; // Cambia con l'ID del film che vuoi cercare // TITANIC
+        const movieId = "tt1679335"; // Cambia con l'ID del film che vuoi cercare // TROLLS
         fetchMovieDetails(movieId);
     </script>
 </body>
