@@ -18,7 +18,7 @@ async def health_check() -> JSONResponse:
     }
     return JSONResponse(content=response, status_code=200)
 
-async def create_user(request: Request, user: User = Body(...), users_collection: Collection = Depends(get_user_collection)) -> JSONResponse:
+async def create_user(user: User = Body(...), users_collection: Collection = Depends(get_user_collection)) -> JSONResponse:
     user = jsonable_encoder(user)
     # Hash password before storing
     user["password"] = pwd_context.hash(user["password"])
@@ -30,7 +30,7 @@ async def create_user(request: Request, user: User = Body(...), users_collection
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="User creation failed")
     return JSONResponse(content=created_user, status_code=status.HTTP_201_CREATED)
 
-async def list_users(request: Request, limit: int = 100, offset: int = 0, users_collection: Collection = Depends(get_user_collection)) -> JSONResponse:
+async def list_users(limit: int = 100, offset: int = 0, users_collection: Collection = Depends(get_user_collection)) -> JSONResponse:
     total = users_collection.count_documents({})
     users = list(users_collection.find().skip(offset).limit(limit))
     return JSONResponse(content={
@@ -40,19 +40,19 @@ async def list_users(request: Request, limit: int = 100, offset: int = 0, users_
         "users": users
     }, status_code=200)
 
-async def find_user(request: Request, id: str = Query(...), users_collection: Collection = Depends(get_user_collection)) -> JSONResponse:
+async def find_user(id: str = Query(...), users_collection: Collection = Depends(get_user_collection)) -> JSONResponse:
     user = users_collection.find_one({"_id": id})
     if user is not None:
         return JSONResponse(content=user, status_code=200)
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with ID {id} not found")
 
-async def find_user_by_email(request: Request, email: str = Query(...), users_collection: Collection = Depends(get_user_collection)) -> JSONResponse:
+async def find_user_by_email(email: str = Query(...), users_collection: Collection = Depends(get_user_collection)) -> JSONResponse:
     user = users_collection.find_one({"email": email})
     if user is not None:
         return JSONResponse(content=user, status_code=200)
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with email {email} not found")
 
-async def update_user(request: Request, id: str = Query(...), user: UserUpdate = Body(...), users_collection: Collection = Depends(get_user_collection)) -> JSONResponse:
+async def update_user(id: str = Query(...), user: UserUpdate = Body(...), users_collection: Collection = Depends(get_user_collection)) -> JSONResponse:
     user_data = {k: v for k, v in user.model_dump().items() if v is not None}
     if len(user_data) >= 1:
         update_result = users_collection.update_one({"_id": id}, {"$set": user_data})
@@ -65,7 +65,7 @@ async def update_user(request: Request, id: str = Query(...), user: UserUpdate =
     
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with ID {id} not found")
 
-async def delete_user(request: Request, id: str = Query(...), users_collection: Collection = Depends(get_user_collection)) -> Response:
+async def delete_user(id: str = Query(...), users_collection: Collection = Depends(get_user_collection)) -> Response:
     delete_result = users_collection.delete_one({"_id": id})
     if delete_result.deleted_count == 1:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
