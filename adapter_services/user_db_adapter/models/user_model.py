@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional, List
-from pydantic import BaseModel, Field, EmailStr, field_validator
+from pydantic import BaseModel, Field
 from enum import Enum
 
 class MovieGenre(str, Enum):
@@ -13,8 +13,8 @@ class MovieGenre(str, Enum):
 
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), alias="_id")
-    name: str = Field(..., min_length=2, description="Name must be at least 2 characters long")
-    surname: str = Field(..., min_length=2, description="Surname must be at least 2 characters long")
+    name: str = Field(...)
+    surname: str = Field(...)
     email: str = Field(..., description="Must be a valid email address")
     preferences: List[MovieGenre] = Field(..., description="List of preferred movie genres")
     password: str = Field(..., min_length=8, description="Password must be at least 8 characters long")
