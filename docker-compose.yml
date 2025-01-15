@@ -65,6 +65,16 @@ services:
       - "5010:5000"
     depends_on:
       - email-check-adapter
+
+  user-registration-service:
+    build:
+      context: ./process_centric_services/user_registration_service
+    container_name: user-registration-service
+    ports:
+      - "5011:5000"
+    depends_on:
+      - valid-email-service
+      - user-db-adapter
     
 volumes:
   movie-match:
