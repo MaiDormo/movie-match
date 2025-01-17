@@ -75,6 +75,17 @@ services:
     depends_on:
       - valid-email-service
       - user-db-adapter
-    
+  
+  user-login-service:
+    build:
+      context: ./process_centric_services/user_login_service
+    container_name: user-login-service
+    ports:
+      - "5012:5000"
+    depends_on:
+      - user-db-adapter
+    env_file:
+      - .env
+
 volumes:
   movie-match:
