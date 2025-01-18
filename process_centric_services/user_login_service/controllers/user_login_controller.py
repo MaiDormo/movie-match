@@ -5,7 +5,6 @@ from passlib.context import CryptContext
 from typing import Annotated, Optional
 import requests
 import jwt
-import os
 from datetime import datetime, timedelta
 import pytz
 from enum import Enum
