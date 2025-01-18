@@ -28,7 +28,7 @@ def make_request(url, params):
 async def get_movies(title: str = Query(...), settings: Settings = Depends(get_settings)):
     params = {
         "apikey": settings.omdb_api_key,
-        "t": title,
+        "s": title, #changed to be the search parameter
     }
     
     try:
