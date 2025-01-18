@@ -2,9 +2,9 @@
 FROM python:3.9-alpine
 
 # Set the working directory
-WORKDIR /omdb_adapter
+WORKDIR /movie_details
 
-# Copy the current directory contents into the container at /omdb_adapter
+# Copy the current directory contents into the container at /movide_details
 COPY . .
 
 # Remove the test folder

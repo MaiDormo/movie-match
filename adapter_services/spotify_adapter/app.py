@@ -3,11 +3,11 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from routes.omdb_routes import router as omdb_router
+from routes.spotify_routes import router as spotify_router
 
 app = FastAPI(
-    title="OMDB API Adapter",
-    description="An adapter service for OMDB API using FastAPI",
+    title="SPOTIFY API Adapter",
+    description="An adapter service for SPOTIFY API",
     version="1.0.0"
 )
 
@@ -15,15 +15,14 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5006",  # Origine 1
-        "http://127.0.0.1:5006"   # Origine 2 (aggiungi questa)
+        "http://127.0.0.1:5006"   # Origine 2 
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-app.include_router(omdb_router)
+app.include_router(spotify_router)
 
 @app.exception_handler(405)
 async def method_not_allowed(request: Request, exc: HTTPException):

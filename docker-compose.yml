@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   omdb-adapter:
     build:
@@ -11,7 +9,9 @@ services:
       - .env
     environment:
       - OMDB_API_KEY=${OMDB_API_KEY}
-    
+    volumes:
+      - ./adapter_services/omdb_adapter:/omdb_adapter 
+  
   streaming-availability-adapter:
     build:
       context: ./adapter_services/streaming_availability_adapter
@@ -22,6 +22,8 @@ services:
       - .env
     environment:
       - STREAMING_AVAILABILITY_API_KEY=${STREAMING_AVAILABILITY_API_KEY}
+    volumes:
+      - ./adapter_services/streaming_availability_adapter:/streaming_availability_adapter 
     
   tmdb-adapter:
     build:
@@ -33,13 +35,92 @@ services:
       - .env
     environment:
       - TMDB_API_KEY=${TMDB_API_KEY}
-  
+    volumes:
+    - ./adapter_services/tmdb_adapter:/tmdb_adapter 
+     
+  spotify-adapter:
+    build:
+      context: ./adapter_services/spotify_adapter
+    container_name: spotify-adapter
+    ports:
+      - "5004:5000"
+    env_file:
+      - .env
+    environment:
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+    volumes:
+      - ./adapter_services/spotify_adapter:/spotify_adapter 
+    
+
+
+  interface-prova:
+    build:
+      context: ./interface_prova
+    container_name: interface-prova
+    ports:
+      - "5005:5000"
+    env_file:
+      - .env
+    volumes:
+      - ./interface_prova:/interface_prova
+
+  movie-details-interface:
+    build:
+      context: ./frontend/movie_details
+    container_name: movie-details-interface
+    ports:
+      - "5006:5000"
+    env_file:
+      - .env
+    volumes:
+      - ./frontend/movie_details:/movie_details
+
+  groq-adapter:
+    build:
+      context: ./adapter_services/groq_adapter
+    container_name: groq-adapter
+    ports:
+      - "5007:5000"
+    env_file:
+      - .env
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+    volumes:
+      - ./adapter_services/groq_adapter:/groq_adapter 
+
+  duckduckgo-adapter:
+    build:
+      context: ./adapter_services/duckduckgo_adapter
+    container_name: duckduckgo-adapter
+    ports:
+      - "5008:5000"
+    env_file:
+      - .env
+    environment:
+      - DUCKDUCKGO_API_KEY=${DUCKDUCKGO_API_KEY}
+    volumes:
+      - ./adapter_services/duckduckgo_adapter:/duckduckgo_adapter
+
+  youtube-adapter:
+    build:
+      context: ./adapter_services/youtube_adapter
+    container_name: youtube-adapter
+    ports:
+      - "5009:5000"
+    env_file:
+      - .env
+    environment:
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+    volumes:
+      - ./adapter_services/youtube_adapter:/youtube_adapter
+
   user-db-adapter:
     build:
       context: ./adapter_services/user_db_adapter
     container_name: user-db-adapter
     ports:
-      - "5008:5000"
+      - "5010:5000"
     env_file:
       - .env
     environment:
@@ -51,7 +132,7 @@ services:
       context: ./adapter_services/email_check_adapter
     container_name: email-check-adapter
     ports:
-      - "5009:5000"
+      - "5011:5000"
     env_file:
       - .env
     environment:
@@ -62,7 +143,7 @@ services:
       context: ./business_logic_services/valid_email_service
     container_name: valid-email-service
     ports:
-      - "5010:5000"
+      - "5012:5000"
     depends_on:
       - email-check-adapter
 
@@ -71,7 +152,7 @@ services:
       context: ./process_centric_services/user_registration_service
     container_name: user-registration-service
     ports:
-      - "5011:5000"
+      - "5013:5000"
     depends_on:
       - valid-email-service
       - user-db-adapter
@@ -81,7 +162,7 @@ services:
       context: ./process_centric_services/user_login_service
     container_name: user-login-service
     ports:
-      - "5012:5000"
+      - "5014:5000"
     depends_on:
       - user-db-adapter
     env_file:

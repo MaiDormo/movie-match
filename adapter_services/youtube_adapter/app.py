@@ -3,11 +3,11 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from routes.omdb_routes import router as omdb_router
+from routes.youtube_routes import router as youtube_router
 
 app = FastAPI(
-    title="OMDB API Adapter",
-    description="An adapter service for OMDB API using FastAPI",
+    title="YOUTUBE API Adapter",
+    description="An adapter service for YOUTUBE API using FastAPI",
     version="1.0.0"
 )
 
@@ -15,7 +15,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5006",  # Origine 1
-        "http://127.0.0.1:5006"   # Origine 2 (aggiungi questa)
+        "http://127.0.0.1:5006"   # Origine 2 
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -23,7 +23,7 @@ app.add_middleware(
 )
 
 
-app.include_router(omdb_router)
+app.include_router(youtube_router)
 
 @app.exception_handler(405)
 async def method_not_allowed(request: Request, exc: HTTPException):

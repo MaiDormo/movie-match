@@ -3,3 +3,5 @@ requests
 uvicorn
 pydantic
 httpx
+beautifulsoup4
+jinja2

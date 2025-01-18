@@ -3,3 +3,4 @@ requests
 uvicorn
 pydantic
 httpx
+duckduckgo_search==6.3.3

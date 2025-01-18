@@ -2,9 +2,9 @@
 FROM python:3.9-alpine
 
 # Set the working directory
-WORKDIR /omdb_adapter
+WORKDIR /spotify_adapter
 
-# Copy the current directory contents into the container at /omdb_adapter
+# Copy the current directory contents into the container at /spotify_adapter
 COPY . .
 
 # Remove the test folder

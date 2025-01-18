@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dettagli Film</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <style>
+        /* Previous styles remain the same */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            text-align: center;
+            transition: background 0.5s ease;
+            overscroll-behavior: none;
+            padding-top: 30px;
+            padding-bottom: 30px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            gap: 40px;
+            width: 80%;
+            max-width: 1400px;
+            margin-bottom: 30px;
+        }
+
+        .movie-details {
+            flex: 1;
+            min-width: 300px;
+            padding: 30px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .poster {
+            width: 300px;
+            height: 450px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 40px;
+        }
+
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .trivia {
+            padding: 30px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            width: 350px;
+            overflow: auto;
+            margin-top: 0;
+        }
+
+        /* Restored button styles */
+        .trivia button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #ff6a5f;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+
+        .trivia button:hover {
+            background-color: #ff4a3f;
+        }
+
+        .trivia button:disabled {
+            cursor: default;
+            opacity: 0.7;
+        }
+
+        /* Scrollbar styles */
+        ::-webkit-scrollbar {
+            -webkit-appearance: none;
+            width: 7px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            border-radius: 4px;
+            background-color: rgba(0, 0, 0, .5);
+            -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+        }
+
+        .spotify {
+            padding: 20px;
+            text-align: center;
+            background-color: #1DB954;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 350px;
+        }
+
+        .spotify a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .spotify img {
+            margin-bottom: 10px;
+            margin-top: 20px;
+            width: 200px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .movie-details,
+            .right-column,
+            .trivia,
+            .spotify {
+                width: 100%;
+                max-width: 100%;
+            }
+        }
+
+        .video-container {
+            width: 100%;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .video-container iframe {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border: none;
+            display: block;
+        }
+    </style>
+</head>
+
+
+<body>
+    <div class="container">
+        <!-- Movie Details -->
+        <div class="movie-details">
+            <h1>Dettagli Film</h1>
+            <div class="details">
+                <h2 id="title">Titolo: ---</h2>
+                <p id="year">Anno: ---</p>
+                <p id="director">Regista/i: ---</p>
+            </div>
+            <img id="poster" class="poster" src="" alt="Poster del film">
+            <div class="video-container">
+                <iframe width="560" height="315" title="YouTube video player" frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+        </div>
+
+        <!-- Right Column containing Trivia, Spotify, and Streaming Availability -->
+        <div class="right-column">
+            <!-- Trivia -->
+            <div class="trivia">
+                <h1>Trivia</h1>
+                <p id="question">Caricamento domanda...</p>
+                <div id="options">
+                    <button onclick="checkAnswer(1)">1</button>
+                    <button onclick="checkAnswer(2)">2</button>
+                    <button onclick="checkAnswer(3)">3</button>
+                </div>
+                <p id="feedback" style="font-weight: bold; margin-top: 10px;"></p>
+            </div>
+
+            <!-- Spotify -->
+            <div class="spotify">
+                <a id="spotify-link" href="#" target="_blank">
+                    <img id="spotify-logo"
+                        src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_White.png"
+                        alt="Spotify Logo">
+                    <p id="spotify-text">Direct Link to Spotify Playlist</p>
+                </a>
+            </div>
+
+            <!-- Streaming Availability -->
+            <div class="trivia">
+                <h1>Streaming Availability</h1>
+                <p id="streaming-description">Frase di prova</p>
+            </div>
+        </div>
+
+    </div>
+
+
+
+    <script>
+        async function fetchMovieDetails(movieId) {
+            try {
+                const url = `http://localhost:5001/api/v1/find?id=${movieId}`;
+                const response = await fetch(url);
+                const movie = await response.json();
+
+                // Aggiorna i dettagli del film
+                document.getElementById("title").textContent = `Titolo: ${movie.Title}`;
+                document.getElementById("year").textContent = `Anno: ${movie.Year}`;
+                document.getElementById("director").textContent = `Regista/i: ${movie.Director}`;
+
+                // Usa l'immagine fornita da movie.Poster
+                const posterUrl = movie.Poster;
+                document.getElementById("poster").src = posterUrl;
+
+                // Modifica lo sfondo
+                updateBackground(posterUrl);
+
+                // Ottieni il trailer
+                fetchYouTubeTrailer(movie.Title);
+
+                // Ottieni la domanda trivia
+                fetchTrivia(movie.Title);
+
+                // Fetch and update Spotify playlist
+                await fetchSpotifyPlaylist(movie.Title);
+            } catch (error) {
+                console.error("Errore durante il recupero dei dettagli del film:", error);
+            }
+        }
+
+        async function fetchYouTubeTrailer(movieTitle) {
+            try {
+                const query = encodeURIComponent(`${movieTitle} trailer`);
+                const url = `http://localhost:5009/api/v1/get_video?query=${query}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.embed_url) {
+                    const iframe = document.querySelector(".video-container iframe");
+                    iframe.src = data.embed_url;
+                } else {
+                    console.error("Nessun video trovato per il trailer.");
+                }
+            } catch (error) {
+                console.error("Errore durante il recupero del trailer:", error);
+            }
+        }
+
+        async function fetchSpotifyPlaylist(movieTitle) {
+            try {
+                const url = `http://localhost:5004/api/v1/search_playlist?playlist_name=${encodeURIComponent(movieTitle)}&soundtrack`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.playlist_url) {
+                    const spotifyLink = document.getElementById("spotify-link");
+                    spotifyLink.href = data.playlist_url;
+                } else {
+                    console.error("Nessuna playlist trovata");
+                }
+            } catch (error) {
+                console.error("Errore durante il recupero della playlist:", error);
+            }
+        }
+
+        // Modifica sfondo in base ai colori del poster
+        function updateBackground(posterUrl) {
+            const img = new Image();
+            img.src = posterUrl + "?not-from-cache-please"; // Aggiungi il parametro per evitare la cache
+            img.crossOrigin = "Anonymous";
+            img.onload = function () {
+                const colorThief = new ColorThief();
+                try {
+                    const palette = colorThief.getPalette(img, 2); // Estrai i colori
+                    if (palette && palette.length >= 2) {
+                        const [color1, color2] = palette;
+                        document.body.style.background = `linear-gradient(135deg, rgb(${color1.join(',')}) , rgb(${color2.join(',')}))`;
+                        document.body.style.backgroundAttachment = 'fixed';
+                    }
+                } catch (error) {
+                    console.error("Errore nell'estrazione dei colori:", error);
+                }
+            };
+        }
+
+        // Trivia handling (nessuna modifica necessaria qui)
+        async function fetchTrivia(movieTitle) {
+            try {
+                // const url = `http://localhost:5007/api/v1/get_trivia?movie_title=${encodeURIComponent(movieTitle)}`;
+                // const response = await fetch(url);
+                // const trivia = await response.json();
+                //MOCK CALL
+                const trivia = {
+                    "status": "success",
+                    "ai_question": "In the 2016 animated film 'Trolls', what is the name of the troll who is overly cautious and pessimistic, serving as a foil to Poppy's optimism? \n1. Biggie\n2. Creek\n3. Branch\n\n",
+                    "ai_answer": "3"
+                };
+
+                if (trivia.status === "success") {
+                    const formattedQuestion = trivia.ai_question.replace(/\n/g, "<br>");
+                    document.getElementById("question").innerHTML = formattedQuestion;
+                    window.correctAnswer = trivia.ai_answer;
+                } else {
+                    document.getElementById("question").textContent = "Nessuna domanda trovata.";
+                }
+            } catch (error) {
+                console.error("Errore durante il recupero della trivia:", error);
+            }
+        }
+
+        function checkAnswer(selected) {
+            const feedback = document.getElementById("feedback");
+            const buttons = document.querySelectorAll(".trivia button");
+
+            buttons.forEach(button => {
+                button.disabled = true;
+            });
+
+            const selectedButton = buttons[selected - 1];
+            selectedButton.style.backgroundColor = "#d35400";
+            selectedButton.style.color = "white";
+
+            if (String(selected) === window.correctAnswer) {
+                feedback.textContent = "Risposta corretta!";
+                feedback.style.color = "green";
+            } else {
+                feedback.textContent = `Risposta sbagliata. Quella corretta è: ${window.correctAnswer}`;
+                feedback.style.color = "red";
+            }
+        }
+
+        async function fetchStreamingAvailability(movieId) {
+            try {
+                const url = `http://localhost:5002/api/v1/avail?imdb_id=${movieId}&country=it`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                // Costruisci una stringa con i dati ricevuti, mostrando solo il logo e un bottone per il service_type
+                const availabilityList = data.map(item => {
+                    return `
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <img src="${item.logo}" alt="${item.service_name}" style="width: 100px; height: 100px; margin-right: 30px; margin-left: 20px;">
+                    <a href="${item.link}" target="_blank" style="text-decoration: none;">
+                        <div style="background-color: orange; color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer;">
+                            ${item.service_type}
+                        </div>
+                    </a>
+                </div>
+            `;
+                }).join(''); // Unisce i risultati senza salto di riga
+
+                // Aggiungi i risultati alla pagina
+                document.getElementById('streaming-description').innerHTML = availabilityList;
+            } catch (error) {
+                console.error("Errore durante il recupero della disponibilità in streaming:", error);
+                document.getElementById('streaming-description').textContent = "Impossibile recuperare i dati.";
+            }
+        }
+
+
+
+
+
+
+
+
+         const movieId = "tt1375666"; // Cambia con l'ID del film che vuoi cercare // INCEPTION
+        //const movieId = "tt0317219"; // Cambia con l'ID del film che vuoi cercare // CARS
+        //const movieId = "tt0120338"; // Cambia con l'ID del film che vuoi cercare // TITANIC
+        //const movieId = "tt1679335"; // Cambia con l'ID del film che vuoi cercare // TROLLS
+        fetchMovieDetails(movieId);
+        fetchStreamingAvailability(movieId);
+    </script>
+</body>
+
+</html>
