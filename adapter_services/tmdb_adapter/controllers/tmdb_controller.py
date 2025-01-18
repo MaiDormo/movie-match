@@ -7,8 +7,10 @@ import re
 
 class Settings(BaseModel):
     tmdb_url: str = "https://api.themoviedb.org/3/search/multi"
-    tmdb_url_id: str = "https://api.themoviedb.org/3/find"
+    tmdb_url_id: str = "https://api.themoviedb.org/3/find/external_id"
+    tmdb_discover_movie: str = "https://api.themoviedb.org/3/discover/movie"
     tmdb_api_key: str = os.getenv("TMDB_API_KEY")
+    external_source: str = "imdb_id"
 
 def get_settings():
     return Settings()
@@ -98,8 +100,9 @@ async def get_movie_popularity_id(
     }
 
     params = {
+        "external_id": id,
         "language": language,
-        "external_source": "imdb_id",
+        "external_source": settings.external_source,
     }
 
     try:    
@@ -121,6 +124,60 @@ async def get_movie_popularity_id(
         return handle_error(e, 504, "Request timed out")
     except requests.exceptions.RequestException as e:
         return handle_error(e, 500, "An error occurred while calling the TMDB API")
+    
+
+async def discover_movies(
+        language: str = Query(...), 
+        with_genres: str = Query(...), 
+        vote_avg_gt: float = Query(...), 
+        sort_by: str = Query(default="popularity.desc", description="Sort results by this value"),
+        settings: Settings = Depends(get_settings)
+    ):
+    # Validate language format
+    if not is_valid_language(language):
+        return handle_error(None, 400, "Invalid language format. Expected format: en-US, de-DE, it-IT, etc.")
+    
+    headers = {
+        "accept": "application/json",
+        "Authorization": f"Bearer {settings.tmdb_api_key}"
+    }
+
+    params = {
+        "language": language,
+        "with_genres": with_genres,
+        "vote_average.gte": vote_avg_gt,
+        "sort_by": sort_by,
+        "include_adult": False,
+        "include_video": False,
+        "page": 1
+    }
+
+    try:
+        movies = make_request(settings.tmdb_discover_movie, headers, params)
+        
+        if not movies.get("results"):
+            response = {
+                "status": "fail",
+                "message": "No movies found matching the criteria"
+            }
+            return JSONResponse(content=response, status_code=404)
+
+        return JSONResponse(content={
+            "status": "success",
+            "total_results": movies["total_results"],
+            "total_pages": movies["total_pages"],
+            "results": movies["results"]
+        }, status_code=200)
+    
+    except requests.exceptions.HTTPError as e:
+        return handle_error(e, 404, "HTTP error occurred")
+    except requests.exceptions.ConnectionError as e:
+        return handle_error(e, 503, "Connection error occurred")
+    except requests.exceptions.Timeout as e:
+        return handle_error(e, 504, "Request timed out")
+    except requests.exceptions.RequestException as e:
+        return handle_error(e, 500, "An error occurred while calling the TMDB API")
+
 
 
 async def health_check():
