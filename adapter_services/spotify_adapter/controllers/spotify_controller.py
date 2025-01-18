@@ -151,6 +151,15 @@ def search_playlist_on_spotify(playlist_name: str, access_token: str, settings: 
         return playlist["id"]
     return None
 
+def get_playlist_url(playlist_id: str, access_token: str, settings: Settings) -> str:
+    headers = {"Authorization": f"Bearer {access_token}"}
+    url = f"https://api.spotify.com/v1/playlists/{playlist_id}"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    playlist_data = response.json()
+
+    return playlist_data["external_urls"]["spotify"]
+
 
 def get_playlist_tracks(playlist_id: str, access_token: str, settings: Settings):
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -188,19 +197,15 @@ async def get_playlist(
         if not playlist_id:
             return JSONResponse(content={"message": "No playlist found"}, status_code=404)
 
-        # Ottieni le prime 10 canzoni dalla playlist
-        tracks = get_playlist_tracks(playlist_id, access_token, settings)
-        if not tracks:
-            return JSONResponse(content={"message": "No tracks found in the playlist"}, status_code=404)
+        # Ottieni l'URL della playlist
+        playlist_url = get_playlist_url(playlist_id, access_token, settings)
 
-        return {"playlist_name": playlist_name, "tracks": tracks}
+        return {"playlist_url": playlist_url}
 
     except requests.RequestException as e:
         return handle_error(e, 500, "Errore durante la ricerca della playlist")
     except Exception as e:
         return handle_error(e, 500, "Errore interno del server")
-
-
 
 
 async def health_check():

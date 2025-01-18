@@ -55,7 +55,8 @@ async def get_trivia_question(movie_title: str = Query(...),settings: Settings =
                 }
             ],
             model="llama-3.3-70b-versatile",
-            temperature=1.5
+            temperature=1.5,
+            max_tokens=130
         )
         question = chat_completion.choices[0].message.content[:-1]  # tutto tranne l'ultimo carattere
         answer = chat_completion.choices[0].message.content[-1]   # solo l'ultimo carattere

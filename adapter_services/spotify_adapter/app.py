@@ -2,12 +2,24 @@ import os
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from routes.spotify_routes import router as spotify_router
 
 app = FastAPI(
     title="SPOTIFY API Adapter",
     description="An adapter service for SPOTIFY API",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5006",  # Origine 1
+        "http://127.0.0.1:5006"   # Origine 2 
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(spotify_router)

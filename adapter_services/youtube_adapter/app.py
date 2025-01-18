@@ -3,11 +3,11 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from routes.duckduckgo_routes import router as duckduckgo_router
+from routes.youtube_routes import router as youtube_router
 
 app = FastAPI(
-    title="DUCKSUCKGO API Adapter",
-    description="An adapter service for DUCKDUCKGO API using FastAPI",
+    title="YOUTUBE API Adapter",
+    description="An adapter service for YOUTUBE API using FastAPI",
     version="1.0.0"
 )
 
@@ -23,7 +23,7 @@ app.add_middleware(
 )
 
 
-app.include_router(duckduckgo_router)
+app.include_router(youtube_router)
 
 @app.exception_handler(405)
 async def method_not_allowed(request: Request, exc: HTTPException):
