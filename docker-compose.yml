@@ -51,19 +51,6 @@ services:
       - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
     volumes:
       - ./adapter_services/spotify_adapter:/spotify_adapter 
-    
-
-
-  interface-prova:
-    build:
-      context: ./interface_prova
-    container_name: interface-prova
-    ports:
-      - "5005:5000"
-    env_file:
-      - .env
-    volumes:
-      - ./interface_prova:/interface_prova
 
   movie-details-interface:
     build:
@@ -87,20 +74,7 @@ services:
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
     volumes:
-      - ./adapter_services/groq_adapter:/groq_adapter 
-
-  duckduckgo-adapter:
-    build:
-      context: ./adapter_services/duckduckgo_adapter
-    container_name: duckduckgo-adapter
-    ports:
-      - "5008:5000"
-    env_file:
-      - .env
-    environment:
-      - DUCKDUCKGO_API_KEY=${DUCKDUCKGO_API_KEY}
-    volumes:
-      - ./adapter_services/duckduckgo_adapter:/duckduckgo_adapter
+      - ./adapter_services/groq_adapter:/groq_adapter
 
   youtube-adapter:
     build:
