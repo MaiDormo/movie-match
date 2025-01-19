@@ -160,6 +160,47 @@ def get_playlist_url(playlist_id: str, access_token: str, settings: Settings) ->
 
     return playlist_data["external_urls"]["spotify"]
 
+def get_playlist_info(
+    playlist_name: str = Query(..., description="Nome della playlist da cercare"),
+    settings: Settings = Depends(get_settings)
+):
+    try:
+        # Ottieni il token di accesso
+        access_token = get_spotify_access_token(settings)
+
+        # Cerca la playlist su Spotify e ottieni l'ID
+        playlist_id = search_playlist_on_spotify(playlist_name, access_token, settings)
+        if not playlist_id:
+            return JSONResponse(content={"message": "No playlist found"}, status_code=404)
+
+        # Ottieni i dettagli della playlist
+        headers = {"Authorization": f"Bearer {access_token}"}
+        url = f"https://api.spotify.com/v1/playlists/{playlist_id}"
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        playlist_data = response.json()
+
+        # Estrai i dati richiesti
+        spotify_url = playlist_data.get("external_urls", {}).get("spotify")
+        cover_url = playlist_data.get("images", [{}])[0].get("url")  # Usa il primo elemento di "images"
+        name = playlist_data.get("name")
+
+        # Verifica che i dati siano validi
+        if not spotify_url or not cover_url or not name:
+            return JSONResponse(content={"message": "Incomplete playlist data"}, status_code=500)
+
+        # Restituisci i dati formattati
+        return {
+            "spotify_url": spotify_url,
+            "cover_url": cover_url,
+            "name": name
+        }
+
+    except requests.RequestException as e:
+        return handle_error(e, 500, "Errore durante la ricerca della playlist")
+    except Exception as e:
+        return handle_error(e, 500, "Errore interno del server")
+
 
 def get_playlist_tracks(playlist_id: str, access_token: str, settings: Settings):
     headers = {"Authorization": f"Bearer {access_token}"}

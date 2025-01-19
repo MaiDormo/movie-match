@@ -54,16 +54,16 @@ services:
     
 
 
-  interface-prova:
+  movie-list-interface:
     build:
-      context: ./interface_prova
-    container_name: interface-prova
+      context: ./frontend/movie_list
+    container_name: movie-list-interface
     ports:
       - "5005:5000"
     env_file:
       - .env
     volumes:
-      - ./interface_prova:/interface_prova
+      - ./frontend/movie_list:/movie_list
 
   movie-details-interface:
     build:

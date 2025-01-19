@@ -1,5 +1,5 @@
 fastapi
-requests
+requests==2.2.1
 uvicorn
 pydantic
 httpx

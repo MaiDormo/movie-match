@@ -2,9 +2,9 @@
 FROM python:3.9-alpine
 
 # Set the working directory
-WORKDIR /interface_prova
+WORKDIR /movie_list
 
-# Copy the current directory contents into the container at /spotify_adapter
+# Copy the current directory contents into the container at /movide_details
 COPY . .
 
 # Remove the test folder
