@@ -2,7 +2,7 @@
 FROM python:3.9-alpine
 
 # Set the working directory
-WORKDIR /movie_details
+WORKDIR /frontend
 
 # Copy the current directory contents into the container at /movide_details
 COPY . .
@@ -20,4 +20,4 @@ EXPOSE 5000
 ENV PORT=5000
 
 # Run app.py when the container launches
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "5000"]

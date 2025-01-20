@@ -137,8 +137,9 @@ services:
     ports:
       - "5012:5000"
     depends_on:
-      email-check-adapter:
-        condition: service_healthy
+      # email-check-adapter:
+      #   condition: service_healthy
+      - email-check-adapter
 
   # Process Centric Services
   user-registration-service:
@@ -149,10 +150,12 @@ services:
     ports:
       - "5013:5000"
     depends_on:
-      valid-email-service:
-        condition: service_healthy
-      user-db-adapter:
-        condition: service_healthy
+      # valid-email-service:
+      #   condition: service_healthy
+      # user-db-adapter:
+      #   condition: service_healthy
+      - valid-email-service
+      - user-db-adapter
   
   user-login-service:
     <<: [*adapter-service, *health-check]
@@ -162,32 +165,43 @@ services:
     ports:
       - "5014:5000"
     depends_on:
-      user-db-adapter:
-        condition: service_healthy
+      # user-db-adapter:
+      #   condition: service_healthy
+      - user-db-adapter
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
 
   # Frontend Services
-  movie-details-interface:
+  frontend:
     <<: [*adapter-service, *health-check]
     build:
-      context: ./frontend/movie_details
-    container_name: movie-details-interface
+      context: ./frontend/
+    container_name: frontend
     ports:
       - "5006:5000"
     volumes:
       - ./frontend/movie_details:/movie_details
     depends_on:
-      omdb-adapter:
-        condition: service_healthy
-      streaming-availability-adapter:
-        condition: service_healthy
-      spotify-adapter:
-        condition: service_healthy
-      youtube-adapter:
-        condition: service_healthy
+      # omdb-adapter:
+      #   condition: service_healthy
+      # streaming-availability-adapter:
+      #   condition: service_healthy
+      # spotify-adapter:
+      #   condition: service_healthy
+      # youtube-adapter:
+      #   condition: service_healthy
+      # user-login-service:
+      #   condition: service_healthy
+      # user-registration-service:
+      #   condition: service_healthy
+      - omdb-adapter
+      - streaming-availability-adapter
+      - spotify-adapter
+      - youtube-adapter
+      - user-login-service
+      - user-registration-service
 
 # Networks
 networks:
