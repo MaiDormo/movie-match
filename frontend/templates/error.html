@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieMatch - Error {{ status_code }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/error.css">
+</head>
+<body>
+    <div class="error-container">
+        <h1>Error {{ status_code }}</h1>
+        <p class="error-message">{{ message }}</p>
+        <div class="button-group">
+            <a href="/" class="button">Return Home</a>
+            <a href="javascript:history.back()" class="button secondary">Go Back</a>
+        </div>
+    </div>
+</body>
+</html>
