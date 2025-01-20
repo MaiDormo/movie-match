@@ -41,13 +41,15 @@
             </div>
 
             <!-- Spotify -->
-            <div class="spotify">
-                <a id="spotify-link" href="#" target="_blank">
-                    <img id="spotify-logo"
-                        src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_White.png"
-                        alt="Spotify Logo">
-                    <p id="spotify-text">Direct Link to Spotify Playlist</p>
-                </a>
+            <div class="spotify" id="spotify-container" onclick="openSpotify()">
+                <img id="spotify-cover" src="" alt="Playlist Cover">
+                <div class="playlist-info">
+                    <h2 id="playlist-title">Titolo Playlist</h2>
+                    <p id="playlist-description">Ascolta su Spotify</p>
+                </div>
+                <img id="spotify-logo" class="spotify-logo"
+                    src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_White.png"
+                    alt="Spotify Logo">
             </div>
 
             <!-- Streaming Availability -->
