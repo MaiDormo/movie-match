@@ -1,14 +1,14 @@
-from fastapi import HTTPException, Depends, Query, status, Body
+from typing import Collection
+from fastapi import HTTPException, Depends, Query, Request, status, Body
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ValidationError
-from pymongo import MongoClient
-from pymongo.errors import ServerSelectionTimeoutError, OperationFailure
-from bson import ObjectId
+from pydantic import BaseModel
 from models.genre_model import Genre, GenreUpdate
 import os
 
+
+from config.database import get_mongo_client
+
 class Settings(BaseModel):
-    db_uri: str = os.getenv("ATLAS_URI")
     db_name: str = os.getenv("DB_NAME", "movie-match")
     db_collection: str = "genres"
 
@@ -16,39 +16,11 @@ def get_settings() -> Settings:
     """Get database settings."""
     return Settings()
 
-def get_collection(settings: Settings = Depends(get_settings)):
-    """Get MongoDB collection with error handling."""
-    try:
-        client = MongoClient(settings.db_uri)
-        # Test connection
-        client.admin.command('ping')
-        return client[settings.db_name][settings.db_collection]
-    except ServerSelectionTimeoutError as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database connection timed out"
-        ) from e
-    except OperationFailure as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database operation failed"
-        ) from e
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Database connection failed: {str(e)}"
-        ) from e
+def get_collection(request: Request, settings: Settings = Depends(get_settings)) -> Collection:
+    """Get MongoDB collection from request app state."""
+    mongo_client = request.app.state.db
+    return mongo_client[settings.db_name][settings.db_collection]
 
-def create_response(status_code: int, message: str, data: dict = None) -> JSONResponse:
-
-    content = {
-        "status": "success" if status_code < 400 else "error",
-        "message": message
-    }
-    if data:
-        content["data"] = data
-
-    return JSONResponse(content=content, status_code=status_code)
 
 def serialize_genre(genre):
     """Convert MongoDB document to JSON serializable dict."""
@@ -56,9 +28,14 @@ def serialize_genre(genre):
     return genre
 
 async def health_check():
-    return create_response(
-        status_code=200, 
-        message="The Genres API adapter is up and running!")
+    """Health check endpoint."""
+    return JSONResponse(
+        content={
+            "status": "success",
+            "message": "The Genres API adapter is up and running!"
+        },
+        status_code=status.HTTP_200_OK
+    )
 
 async def create_genre(genre: Genre, genres_collection = Depends(get_collection)) -> JSONResponse:
     """Create a new genre with an auto-incrementing integer ID."""
@@ -66,45 +43,54 @@ async def create_genre(genre: Genre, genres_collection = Depends(get_collection)
         # Find the highest existing ID
         highest_genre = genres_collection.find_one(
             {},
-            sort=[("genreId", -1)]  # Sort by genreId in descending order
+            sort=[("genreId", -1)]
         )
         
         # Set new ID as highest + 1, or 1 if no genres exist
         new_id = (highest_genre["genreId"] + 1) if highest_genre else 1
         
-        # Set the new ID in the genre model
+        # Prepare genre document
         genre_dict = genre.model_dump(by_alias=True)
         genre_dict["genreId"] = new_id
         
-        # Insert the genre with the new ID
+        # Insert genre
         result = genres_collection.insert_one(genre_dict)
         if not result.inserted_id:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create genre"
             )
-            
-        return create_response(
-            status_code=status.HTTP_201_CREATED,
-            message="Genre created successfully",
-            data=serialize_genre(genre_dict)
+        
+        # Get created genre
+        created_genre = genres_collection.find_one({"_id": result.inserted_id})
+        return JSONResponse(
+            content={
+                "status": "success",
+                "message": "Genre created successfully",
+                "data": serialize_genre(created_genre)
+            },
+            status_code=status.HTTP_201_CREATED
         )
-    except ValidationError as e:
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
 
 async def list_genres(genres_collection = Depends(get_collection)) -> JSONResponse:
     """List all genres."""
     try:
-        total = genres_collection.count_documents({})
         genres = [serialize_genre(genre) for genre in genres_collection.find()]
-        
-        return create_response(
-            status_code=status.HTTP_200_OK,
-            message="Genres retrieved successfully",
-            data={"total": total, "genres": genres}
+        return JSONResponse(
+            content={
+                "status": "success", 
+                "message": "Genres retrieved successfully",
+                "data": {
+                    "total": len(genres),
+                    "genres": genres
+                }
+            },
+            status_code=status.HTTP_200_OK
         )
     except Exception as e:
         raise HTTPException(
@@ -121,10 +107,13 @@ async def get_genre(id: int = Query(...), genres_collection = Depends(get_collec
             detail=f"Genre with ID {id} not found"
         )
     
-    return create_response(
-        status_code=status.HTTP_200_OK,
-        message="Genre retrieved successfully",
-        data=serialize_genre(genre)
+    return JSONResponse(
+        content={
+            "status": "success",
+            "message": "Genre retrieved successfully",
+            "data": serialize_genre(genre)
+        },
+        status_code=status.HTTP_200_OK
     )
 
 async def update_genre(
@@ -137,32 +126,37 @@ async def update_genre(
         update_data = {k: v for k, v in genre.model_dump(by_alias=True).items() if v is not None}
         
         if not update_data:
-            return create_response(
-                status_code=status.HTTP_200_OK,
-                message="No changes requested"
+            return JSONResponse(
+                content={
+                    "status": "success",
+                    "message": "No changes requested"
+                },
+                status_code=status.HTTP_200_OK
             )
 
-        update_result = genres_collection.update_one(
+        result = genres_collection.update_one(
             {"genreId": id},
             {"$set": update_data}
         )
         
-        if update_result.matched_count == 0:
+        if result.matched_count == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Genre with ID {id} not found"
             )
 
-        updated_genre = genres_collection.find_one({"genreId": update_data.get("genreId", id)})
-
-        return create_response(
-            status_code=status.HTTP_200_OK,
-            message="Genre updated successfully",
-            data=serialize_genre(updated_genre)
+        updated_genre = genres_collection.find_one({"genreId": id})
+        return JSONResponse(
+            content={
+                "status": "success",
+                "message": "Genre updated successfully",
+                "data": serialize_genre(updated_genre)
+            },
+            status_code=status.HTTP_200_OK
         )
-    except ValidationError as e:
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
 
@@ -176,7 +170,10 @@ async def delete_genre(id: int = Query(...), genres_collection = Depends(get_col
             detail=f"Genre with ID {id} not found"
         )
         
-    return create_response(
-        status_code=status.HTTP_204_NO_CONTENT,
-        message="Genre deleted successfully"
+    return JSONResponse(
+        content={
+            "status": "success",
+            "message": "Genre deleted successfully"
+        },
+        status_code=status.HTTP_204_NO_CONTENT
     )

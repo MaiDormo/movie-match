@@ -3,20 +3,58 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from config.database import get_mongo_client
 from routes.genre_routes import router as genre_router
+
+mongo_client = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global mongo_client
+    try:
+        # Startup: create MongoDB connection
+        mongo_client = get_mongo_client()
+        
+        # Verify connection with timeout
+        mongo_client.admin.command('ping', serverSelectionTimeoutMS=5000)
+        app.state.db = mongo_client
+        print("Successfully connected to MongoDB")
+        yield
+        
+    except ConnectionFailure as e:
+        print(f"Failed to connect to MongoDB: {str(e)}")
+        raise HTTPException(
+            status_code=503,
+            detail="Database connection failed"
+        )
+    except ServerSelectionTimeoutError as e:
+        print(f"MongoDB server selection timeout: {str(e)}")
+        raise HTTPException(
+            status_code=503, 
+            detail="Database server not available"
+        )
+    finally:
+        # Shutdown: close MongoDB connection
+        if mongo_client:
+            mongo_client.close()
+            print("MongoDB connection closed")
 
 app = FastAPI(
     title="Genre API Adapter",
     description="An adapter service for managing genres using FastAPI",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allows all origins, change this to specific origins in production
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allows all methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Allows all headers
 )
 
 app.include_router(genre_router)
@@ -53,6 +91,29 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         status_code=422,
         message="Request validation failed",
         details=error_details
+    )
+
+# Create error handler for database errors
+@app.exception_handler(ConnectionFailure)
+async def db_connection_error_handler(request: Request, exc: ConnectionFailure):
+    return JSONResponse(
+        status_code=503,
+        content={
+            "status": "error",
+            "message": "Database connection error",
+            "details": str(exc)
+        }
+    )
+
+@app.exception_handler(ServerSelectionTimeoutError) 
+async def db_timeout_error_handler(request: Request, exc: ServerSelectionTimeoutError):
+    return JSONResponse(
+        status_code=503,
+        content={
+            "status": "error", 
+            "message": "Database server not responding",
+            "details": str(exc)
+        }
     )
 
 if __name__ == '__main__':
