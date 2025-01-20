@@ -1,7 +1,7 @@
 import random
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -23,8 +23,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/", response_model=dict)
+async def health_check():
+    return JSONResponse(
+        content={
+            "status": "success",
+            "message": "Frontend is up and running!"
+        }
+    )
+
 # Route for homepage
-@app.get("/", response_class=HTMLResponse)
+@app.get("/movie", response_class=HTMLResponse)
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 

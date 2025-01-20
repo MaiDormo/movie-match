@@ -1,5 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieMatch - Movie Details</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/movie-details.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Movie Details -->
+        <div class="movie-details">
+            <h1>Movie Details</h1>
+            <div class="details">
+                <h2 id="title">Loading...</h2>
+                <p id="year">Loading...</p>
+                <p id="director">Loading...</p>
+            </div>
+            <img id="poster" class="poster" src="/static/images/loading.gif" alt="Loading...">
+            <div class="video-container">
+                <iframe width="560" height="315" title="YouTube video player" frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+        </div>
+
+        <!-- Right Column containing Trivia, Spotify, and Streaming Availability -->
+        <div class="right-column">
+            <!-- Trivia -->
+            <div class="trivia">
+                <h1>Trivia</h1>
+                <p id="question">Caricamento domanda...</p>
+                <div id="options">
+                    <button onclick="checkAnswer(1)">1</button>
+                    <button onclick="checkAnswer(2)">2</button>
+                    <button onclick="checkAnswer(3)">3</button>
+                </div>
+                <p id="feedback" style="font-weight: bold; margin-top: 10px;"></p>
+            </div>
+
+            <!-- Spotify -->
+            <div class="spotify">
+                <a id="spotify-link" href="#" target="_blank">
+                    <img id="spotify-logo"
+                        src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_White.png"
+                        alt="Spotify Logo">
+                    <p id="spotify-text">Direct Link to Spotify Playlist</p>
+                </a>
+            </div>
+
+            <!-- Streaming Availability -->
+            <div class="trivia">
+                <h1>Streaming Availability</h1>
+                <p id="streaming-description">Frase di prova</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/movie-details.js"></script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -8,198 +72,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
     <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #fff;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            text-align: center;
-            transition: background 0.5s ease;
-            overscroll-behavior: none;
-            padding-top: 30px;
-            padding-bottom: 30px;
-        }
-
-        .container {
-            display: flex;
-            justify-content: space-between;
-            gap: 40px;
-            width: 80%;
-            max-width: 1400px;
-            margin-bottom: 30px;
-            animation: fadeIn 1s ease-in-out;
-        }
-
-        .movie-details {
-            flex: 1;
-            min-width: 300px;
-            padding: 30px;
-            background: linear-gradient(135deg, #ffffff, #f0f0f0);
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .movie-details:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .poster {
-            width: 300px;
-            height: 450px;
-            object-fit: cover;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            margin-bottom: 40px;
-            transition: transform 0.3s ease;
-        }
-
-        .poster:hover {
-            transform: scale(1.05);
-        }
-
-        .right-column {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            flex: 1;
-        }
-
-        .trivia {
-            padding: 30px;
-            background: linear-gradient(135deg, #ffffff, #f0f0f0);
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            text-align: left;
-            width: 350px;
-            overflow: auto;
-            margin-top: 0;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .trivia:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .trivia button {
-            margin: 5px;
-            padding: 10px 20px;
-            font-size: 1em;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            background: linear-gradient(135deg, #ff6a5f, #ff4a3f);
-            color: white;
-            transition: background-color 0.3s ease, transform 0.3s ease;
-        }
-
-        .trivia button:hover {
-            background: linear-gradient(135deg, #ff4a3f, #ff2a1f);
-            transform: scale(1.05);
-        }
-
-        .trivia button:disabled {
-            cursor: default;
-            opacity: 0.7;
-        }
-
-        ::-webkit-scrollbar {
-            -webkit-appearance: none;
-            width: 7px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            border-radius: 4px;
-            background-color: rgba(0, 0, 0, .5);
-            -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
-        }
-
-        .spotify {
-            padding: 20px;
-            text-align: center;
-            background: linear-gradient(135deg, #1DB954, #1AA34A);
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 350px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .spotify:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .spotify a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .spotify img {
-            margin-bottom: 10px;
-            margin-top: 20px;
-            width: 200px;
-            transition: transform 0.3s ease;
-        }
-
-        .spotify img:hover {
-            transform: scale(1.05);
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .movie-details,
-            .right-column,
-            .trivia,
-            .spotify {
-                width: 100%;
-                max-width: 100%;
-            }
-        }
-
-        .video-container {
-            width: 100%;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease;
-        }
-
-        .video-container:hover {
-            transform: scale(1.05);
-        }
-
-        .video-container iframe {
-            width: 100%;
-            aspect-ratio: 16/9;
-            border: none;
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+        
     </style>
 </head>
 
