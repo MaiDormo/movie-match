@@ -1,88 +1,111 @@
 body {
+    font-family: 'Roboto', sans-serif;
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
-    background-color: #ff4a4a;
+    background: #fff;
+    color: #333;
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 100vh;
+    align-items: flex-start;
+    text-align: center;
+    transition: background 0.5s ease;
+    overscroll-behavior: none;
+    padding-top: 30px;
+    padding-bottom: 30px;
 }
 
 .container {
     display: flex;
-    gap: 20px;
-    width: 90%;
-    height: 90%;
+    justify-content: space-between;
+    gap: 40px;
+    width: 80%;
+    max-width: 1400px;
+    margin-bottom: 30px;
+    animation: fadeIn 1s ease-in-out;
 }
 
-.left-box {
-    flex: 2;
-    background-color: #ffffff;
+.movie-details {
+    flex: 1.5;
+    min-width: 300px;
+    padding: 30px;
+    background: linear-gradient(135deg, #ffffff, #f0f0f0);
     border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.poster {
+    width: 300px;
+    height: 450px;
+    object-fit: cover;
+    border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    padding: 50px;
+    margin-bottom: 40px;
+    transition: transform 0.3s ease;
+}
+
+.poster:hover {
+    transform: scale(1.05);
+}
+
+.right-column {
     display: flex;
     flex-direction: column;
+    gap: 20px;
+    flex: 1;
 }
 
-.right-box {
-    flex: 1;
-    background-color: #ffffff;
+.trivia {
+    padding: 30px;
+    background: linear-gradient(135deg, #ffffff, #f0f0f0);
     border-radius: 15px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: left;
+    width: 350px;
+    overflow: auto;
+    margin-top: 0;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.search-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-.search-input {
-    flex: 1;
-    padding: 10px 15px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    outline: none;
-}
-
-.search-input:focus {
-    border-color: #FF5757;
-    box-shadow: 0 0 5px rgba(255, 87, 87, 0.5);
-}
-
-.search-button {
-    padding: 10px 60px;
-    background: #FF5757;
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
+.trivia button {
+    margin: 5px;
+    padding: 10px 20px;
+    font-size: 1em;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: background 0.3s ease;
+    background: linear-gradient(135deg, #ff6a5f, #ff4a3f);
+    color: white;
+    transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
-.search-button:hover {
-    background: #e04e4e;
+.trivia button:hover {
+    background: linear-gradient(135deg, #ff4a3f, #ff2a1f);
+    transform: scale(1.05);
 }
 
-.movie-list {
-    overflow-y: scroll;
-    flex-grow: 1;
-    padding: 25px; /* Rimosso il padding */
-    margin-top: 10px;
-    min-height: 0;
-    max-height: none;
-    position: relative;
-    display: flex;
-    flex-wrap: wrap; /* Aggiungi questa riga per abilitare il wrapping dei film */
-    gap: 20px; /* Aggiungi spazio tra i film */
+.trivia button:disabled {
+    cursor: default;
+    opacity: 0.7;
 }
+
+/* Aggiungi questa parte al tuo CSS */
+.streaming-button {
+    background-color: orange;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.streaming-button:hover {
+    transform: scale(1.05);
+    /* Ingrandisce il bottone */
+    background-color: #d35400;
+    /* Scurisce il bottone */
+}
+
 
 ::-webkit-scrollbar {
     -webkit-appearance: none;
@@ -95,106 +118,115 @@ body {
     -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
 }
 
-.loading-spinner {
-    display: none;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #FF5757;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    z-index: 10;
-}
-
-@keyframes spin {
-    0% {
-        transform: translate(-50%, -50%) rotate(0deg);
-    }
-
-    100% {
-        transform: translate(-50%, -50%) rotate(360deg);
-    }
-}
-
-.movie-item {
-    background-color: #a4e1a4; /* Sfondo verde chiaro */
-    padding: 25px;
-    margin-bottom: 15px;
-    border-radius: 10px;
-    font-size: 16px;
+.spotify {
     display: flex;
     align-items: center;
-    gap: 15px;
+    padding: 30px;
+    text-align: left;
+    background: linear-gradient(135deg, #1DB954, #1AA34A);
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 350px;
     cursor: pointer;
-    transition: transform 0.3s ease, background-color 0.3s ease;
-    width: 48%; /* Cambiato per coprire il 48% della larghezza per riga */
-    box-sizing: border-box;
-    overflow: hidden; /* Nascondi eventuali bordi extra */
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.movie-item:hover {
-    background-color: #8bcf8b; /* Cambia colore al passaggio del mouse */
-    transform: scale(1.03); /* Effetto ingrandimento */
+.spotify:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-.movie-item:active {
-    transform: scale(0.98); /* Effetto di riduzione al clic */
-}
-
-.movie-item img {
+.spotify img {
+    border-radius: 8px;
     width: 100px;
-    height: 150px;
+    height: 100px;
     object-fit: cover;
-    border-radius: 5px;
 }
 
-.movie-item .title {
-    font-weight: bold;
-    font-size: 18px;
-}
-
-.movie-item .details {
-    font-size: 14px;
-    color: #666;
-}
-
-/* Add to your existing CSS */
-.error-message {
-    background: white;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    max-width: 500px;
-    margin: 2rem auto;
-}
-
-.error-message h2 {
-    color: #ff4a3f;
-    margin-bottom: 1rem;
-}
-
-.back-button {
-    background: #ff4a3f;
+.spotify .playlist-info {
+    flex: 1;
+    margin-left: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     color: white;
+}
+
+.spotify .playlist-info h2 {
+    margin: 0;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.spotify .playlist-info p {
+    margin: 5px 0 0;
+    font-size: 0.9em;
+}
+
+.spotify .spotify-logo {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 60px;
+    margin: 10px;
+    /* Aumenta la larghezza */
+    height: auto;
+    /* Mantieni le proporzioni */
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+
+.spotify:hover .spotify-logo {
+    opacity: 1;
+}
+
+
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .movie-details,
+    .right-column,
+    .trivia,
+    .spotify {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
+.video-container {
+    width: 100%;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.video-container:hover {
+    transform: scale(1.05);
+}
+
+.video-container iframe {
+    width: 100%;
+    aspect-ratio: 16/9;
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 1rem;
+    display: block;
 }
 
-.loading {
-    opacity: 0.5;
-    pointer-events: none;
-}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
 
-/* Add more error states */
-.error-state {
-    color: #ff4a3f;
-    font-style: italic;
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
