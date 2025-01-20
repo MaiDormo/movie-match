@@ -1,0 +1,163 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #ff4a4a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    display: flex;
+    gap: 20px;
+    width: 90%;
+    height: 90%;
+}
+
+.left-box {
+    flex: 2;
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+}
+
+.right-box {
+    flex: 1;
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 10px 15px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    outline: none;
+}
+
+.search-input:focus {
+    border-color: #FF5757;
+    box-shadow: 0 0 5px rgba(255, 87, 87, 0.5);
+}
+
+.search-button {
+    padding: 10px 60px;
+    background: #FF5757;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.search-button:hover {
+    background: #e04e4e;
+}
+
+.movie-list {
+    overflow-y: scroll;
+    flex-grow: 1;
+    padding: 25px; /* Rimosso il padding */
+    margin-top: 10px;
+    min-height: 0;
+    max-height: none;
+    position: relative;
+    display: flex;
+    flex-wrap: wrap; /* Aggiungi questa riga per abilitare il wrapping dei film */
+    gap: 20px; /* Aggiungi spazio tra i film */
+}
+
+::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, .5);
+    -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+}
+
+.loading-spinner {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #FF5757;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    z-index: 10;
+}
+
+@keyframes spin {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+.movie-item {
+    background-color: #a4e1a4; /* Sfondo verde chiaro */
+    padding: 25px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    cursor: pointer;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    width: 48%; /* Cambiato per coprire il 48% della larghezza per riga */
+    box-sizing: border-box;
+    overflow: hidden; /* Nascondi eventuali bordi extra */
+}
+
+.movie-item:hover {
+    background-color: #8bcf8b; /* Cambia colore al passaggio del mouse */
+    transform: scale(1.03); /* Effetto ingrandimento */
+}
+
+.movie-item:active {
+    transform: scale(0.98); /* Effetto di riduzione al clic */
+}
+
+.movie-item img {
+    width: 100px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+.movie-item .title {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.movie-item .details {
+    font-size: 14px;
+    color: #666;
+}

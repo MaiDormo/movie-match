@@ -6,3 +6,6 @@ requests
 aiofiles
 python-jose[cryptography]
 passlib[bcrypt]
+httpx
+beautifulsoup4
+pydantic

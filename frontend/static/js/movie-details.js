@@ -218,17 +218,31 @@ async function fetchYouTubeTrailer(movieTitle) {
 
 async function fetchSpotifyPlaylist(movieTitle) {
     try {
-        const url = `http://localhost:5004/api/v1/search_playlist?playlist_name=${encodeURIComponent(movieTitle)}&soundtrack`;
+        const url = `http://localhost:5004/api/v1/search_playlist?playlist_name=${encodeURIComponent(movieTitle)}`;
         const response = await fetch(url);
         const data = await response.json();
 
-        if (data.playlist_url) {
-            const spotifyLink = document.getElementById("spotify-link");
-            spotifyLink.href = data.playlist_url;
+        if (data.spotify_url && data.cover_url && data.name) {
+            // Aggiorna i dettagli del contenitore
+            const spotifyContainer = document.getElementById("spotify-container");
+            document.getElementById("spotify-cover").src = data.cover_url;
+            document.getElementById("playlist-title").textContent = data.name;
+            spotifyContainer.dataset.link = data.spotify_url;
         } else {
-            console.error("Nessuna playlist trovata");
+            console.error("Dati insufficienti per la playlist");
         }
     } catch (error) {
         console.error("Errore durante il recupero della playlist:", error);
+    }
+}
+
+// Funzione per aprire il link della playlist
+function openSpotify() {
+    const spotifyContainer = document.getElementById("spotify-container");
+    const link = spotifyContainer.dataset.link;
+    if (link) {
+        window.open(link, "_blank");
+    } else {
+        console.error("Link Spotify non disponibile");
     }
 }

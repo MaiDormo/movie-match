@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout con due contenitori</title>
+    <link rel="stylesheet" href="/static/css/login.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="left-box">
+            <div class="search-bar">
+                <input type="text" placeholder="Search for a movie..." class="search-input" id="search-input">
+                <button class="search-button" onclick="loadMovies()">Search</button>
+            </div>
+            <div class="movie-list" id="movie-list">
+                <div class="loading-spinner" id="loading-spinner"></div>
+            </div>
+        </div>
+        <div class="right-box"></div>
+    </div>
+
+    <script src="/static/js/movie-list.js"></script>
+</body>
+
+</html>

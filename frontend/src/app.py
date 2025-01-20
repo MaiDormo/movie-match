@@ -33,10 +33,17 @@ async def health_check():
         }
     )
 
+
+
+
+@app.get("/movie-list", response_class=HTMLResponse)
+async def movie_list_page(request: Request):
+    return templates.TemplateResponse("movie-list.html", {"request": request})
+
 # Route for homepage
 @app.get("/movie", response_class=HTMLResponse)
-async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+async def movie_details_page(request: Request):
+    return templates.TemplateResponse("movie-details.html", {"request": request})
 
 # Route for login page
 @app.get("/login", response_class=HTMLResponse)
