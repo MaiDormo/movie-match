@@ -203,3 +203,55 @@ async def delete_user(
         status_code=status.HTTP_204_NO_CONTENT,
         message="User deleted successfully"
     )
+
+
+async def update_user_preferences(
+    id: str,
+    new_preferences: List[int],
+    users_collection: Collection = Depends(get_user_collection)
+) -> JSONResponse:
+    """
+    Aggiorna le preferenze di un utente dato il suo ID e le nuove preferenze.
+    
+    Args:
+        id (str): ID dell'utente.
+        new_preferences (List[int]): Lista delle nuove preferenze.
+        users_collection (Collection): Collezione MongoDB degli utenti.
+
+    Returns:
+        JSONResponse: Risultato dell'aggiornamento.
+    """
+    try:
+        # Controlla se l'utente esiste
+        user = users_collection.find_one({"_id": id})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {id} not found"
+            )
+        
+        # Aggiorna le preferenze
+        result = users_collection.update_one(
+            {"_id": id},
+            {"$set": {"preferences": new_preferences}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {id} not found"
+            )
+        
+        # Recupera l'utente aggiornato
+        updated_user = users_collection.find_one({"_id": id})
+        
+        return create_response(
+            status_code=status.HTTP_200_OK,
+            message="User preferences updated successfully",
+            data=updated_user
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )

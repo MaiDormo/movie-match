@@ -136,10 +136,10 @@ services:
     container_name: valid-email-service
     ports:
       - "5012:5000"
-    depends_on:
+    #depends_on:
       # email-check-adapter:
       #   condition: service_healthy
-      - email-check-adapter
+      #- email-check-adapter
 
   # Process Centric Services
   user-registration-service:
@@ -149,13 +149,13 @@ services:
     container_name: user-registration-service
     ports:
       - "5013:5000"
-    depends_on:
+    #depends_on:
       # valid-email-service:
       #   condition: service_healthy
       # user-db-adapter:
       #   condition: service_healthy
-      - valid-email-service
-      - user-db-adapter
+      #- valid-email-service
+      #- user-db-adapter
   
   user-login-service:
     <<: [*adapter-service, *health-check]
@@ -164,10 +164,10 @@ services:
     container_name: user-login-service
     ports:
       - "5014:5000"
-    depends_on:
+    #depends_on:
       # user-db-adapter:
       #   condition: service_healthy
-      - user-db-adapter
+      #- user-db-adapter
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
@@ -182,8 +182,8 @@ services:
     ports:
       - "5006:5000"
     volumes:
-      - ./frontend/movie_details:/movie_details
-    depends_on:
+      - ./frontend:/frontend
+    #depends_on:
       # omdb-adapter:
       #   condition: service_healthy
       # streaming-availability-adapter:
@@ -196,12 +196,12 @@ services:
       #   condition: service_healthy
       # user-registration-service:
       #   condition: service_healthy
-      - omdb-adapter
-      - streaming-availability-adapter
-      - spotify-adapter
-      - youtube-adapter
-      - user-login-service
-      - user-registration-service
+      # - omdb-adapter
+      # - streaming-availability-adapter
+      # - spotify-adapter
+      # - youtube-adapter
+      # - user-login-service
+      # - user-registration-service
 
 # Networks
 networks:

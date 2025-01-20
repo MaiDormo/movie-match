@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MovieMatch - Browse Movies</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Change this line from login.css to movie-list.css -->
     <link rel="stylesheet" href="/static/css/movie-list.css">
 </head>
 <body>
@@ -19,9 +18,18 @@
                 <div class="loading-spinner" id="loading-spinner"></div>
             </div>
         </div>
-        <div class="right-box"></div>
+        <div class="right-box">
+            <div class="genres-box" id="genres-box">
+                <h1>Favorite Genres</h1>
+                <div class="genre-tags" id="genre-tags">
+                    <!-- Tags generati dinamicamente -->
+                </div>
+                <button class="confirm-button" id="confirm-button">Confirm Choices</button>
+            </div>
+        </div>
     </div>
 
-    <script src="/static/js/movie-list.js"></script>
+    <script type="module" src="/static/js/movie-list.js"></script>
+    <script type="module" src="/static/js/genres.js"></script>
 </body>
 </html>

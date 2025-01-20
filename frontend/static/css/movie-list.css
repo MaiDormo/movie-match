@@ -27,6 +27,7 @@ body {
 }
 
 .right-box {
+    padding: 20px;
     flex: 1;
     background-color: #ffffff;
     border-radius: 15px;
@@ -160,4 +161,63 @@ body {
 .movie-item .details {
     font-size: 14px;
     color: #666;
+}
+
+.genres-box {
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+.genres-box h3 {
+    font-size: 400px;
+    margin-bottom: 10px;
+    color: #1f0707;
+}
+
+.genre-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.genre-tag {
+    padding: 5px 15px;
+    background-color: #e0e0e0;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.genre-tag.selected {
+    background-color: #FF5757;
+    color: white;
+    border-color: #FF5757;
+}
+
+.genre-tag:hover {
+    background-color: #ff7070;
+    color: white;
+}
+
+.confirm-button {
+    padding: 10px 40px;
+    background-color: #FF5757;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    margin-top: 15px;
+}
+
+
+.confirm-button:hover {
+    background-color: #e04e4e;
 }

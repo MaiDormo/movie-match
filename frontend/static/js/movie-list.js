@@ -1,3 +1,6 @@
+
+import { getUserGenres }  from './genres.js';
+
 function loadMovies(query = '') {
     const movieList = document.getElementById('movie-list');
     const spinner = document.getElementById('loading-spinner');
@@ -56,5 +59,85 @@ function loadMovies(query = '') {
         });
 }
 
+async function createGenres(userId) {
+    const genreTagsContainer = document.getElementById('genre-tags');
+
+    try {
+        // Chiama la funzione per ottenere i generi con `name` e `isPreferred`
+        const userGenres = await getUserGenres(userId);
+
+        // Pulisce il contenitore dei tag esistente
+        genreTagsContainer.innerHTML = '';
+
+        // Crea i tag basandosi sui generi ottenuti
+        userGenres.forEach(genre => {
+            const tag = document.createElement('div');
+            tag.classList.add('genre-tag');
+            tag.textContent = genre.name;
+
+            // Aggiungi una classe se è un genere preferito
+            if (genre.isPreferred) {
+                tag.classList.add('selected');
+            }
+
+            // Aggiungi toggle per selezione/deselezione
+            tag.onclick = () => {
+                tag.classList.toggle('selected');
+            };
+
+            genreTagsContainer.appendChild(tag);
+        });
+
+        const confirmButton = document.getElementById('confirm-button');
+        confirmButton.onclick = () => {
+            // Ottieni i genreId selezionati
+            const selectedGenres = Array.from(document.querySelectorAll('.genre-tag.selected'))
+                .map(tag => {
+                    // Trova il genere selezionato nella lista dei generi dell'utente
+                    const genre = userGenres.find(g => g.name === tag.textContent);
+                    return genre ? genre.genreId : null;
+                })
+                .filter(genreId => genreId !== null); // Filtra i generi non trovati
+
+            if (selectedGenres.length > 0) {
+                updateUserPreferences(userId, selectedGenres); // Chiamata all'API per aggiornare le preferenze
+            } else {
+                alert('No genres selected!');
+            }
+        };
+    } catch (error) {
+        console.error('Error creating genre tags:', error);
+    }
+}
+
+
+async function updateUserPreferences(userId, preferences) {
+    try {
+        const response = await fetch(`http://localhost:5010/api/v1/user-preferences?id=${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(preferences)  // Passa solo la lista di generi selezionati
+        });
+
+        const data = await response.json();
+
+        if (data.status === "success") {
+            alert("Preferences updated successfully!");
+        } else {
+            alert("Failed to update preferences.");
+        }
+    } catch (error) {
+        console.error('Error updating user preferences:', error);
+        alert("Error updating preferences.");
+    }
+}
+
+
 // Carica "Avengers" all'inizio
-window.onload = () => loadMovies('Avengers');
+
+window.onload = () => {
+    loadMovies('Avengers');
+    createGenres("0b8ac00c-a52b-4649-bd75-699b49c00ce3");
+};
