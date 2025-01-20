@@ -1,22 +1,13 @@
 import uuid
 from typing import Optional, List
 from pydantic import BaseModel, Field
-from enum import Enum
-
-class MovieGenre(str, Enum):
-    ACTION = "action"
-    COMEDY = "comedy"
-    DRAMA = "drama"
-    HORROR = "horror"
-    SCIFI = "sci-fi"
-    #TODO! add more
 
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), alias="_id")
     name: str = Field(...)
     surname: str = Field(...)
     email: str = Field(..., description="Must be a valid email address")
-    preferences: List[MovieGenre] = Field(..., description="List of preferred movie genres")
+    preferences: List[int] = Field(..., description="List of preferred movie genres")
     password: str = Field(..., min_length=8, description="Password must be at least 8 characters long")
 
     class Config:
@@ -27,7 +18,7 @@ class User(BaseModel):
                 "name": "John",
                 "surname": "Doe",
                 "email": "john.doe@example.com",
-                "preferences": ["action", "comedy"],
+                "preferences": [28, 35],
                 "password": "securepassword123"
             }
         }
@@ -42,6 +33,6 @@ class UserUpdate(BaseModel):
             "example": {
                 "name": "John",
                 "surname": "Doe",
-                "preferences": ["action", "fantasy"]
+                "preferences": [28, 14]
             }
         }
