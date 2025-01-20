@@ -1,3 +1,37 @@
+// Add this function at the top of login.js
+async function checkExistingToken() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        // Verify token validity using refresh-token endpoint
+        const response = await fetch('http://localhost:5014/api/v1/refresh-token', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Update token and redirect to home
+            localStorage.setItem('token', data.data.access_token);
+            window.location.href = '/';
+        } else {
+            // Token is invalid, remove it
+            localStorage.removeItem('token');
+        }
+    } catch (error) {
+        console.error('Token verification error:', error);
+        localStorage.removeItem('token');
+    }
+}
+
+// Add this line after the existing code
+document.addEventListener('DOMContentLoaded', checkExistingToken);
+
 async function handleLogin(event) {
     event.preventDefault();
     resetErrors();
