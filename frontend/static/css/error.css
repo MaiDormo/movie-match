@@ -6,7 +6,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, #ff6a5f, #ff4a3f);
+    background: linear-gradient(135deg, #6e6767, #453636);
 }
 
 .error-container {
@@ -45,7 +45,7 @@ h1 {
 }
 
 .button:first-child {
-    background: #ff4a3f;
+    background: #7e4d4f;
     color: white;
 }
 

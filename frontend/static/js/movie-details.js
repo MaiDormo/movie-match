@@ -25,7 +25,7 @@ async function fetchMovieDetails(movieId) {
 
         // Update movie details
         updateMovieInfo(data);
-        
+
         // Fetch additional content only if main content loaded successfully
         try {
             await Promise.all([
@@ -61,7 +61,7 @@ function updateMovieInfo(movie) {
     }
 
     // Update text content with fallbacks
-    elements.title.textContent = `Title: ${movie.Title || 'N/A'}`;
+    elements.title.textContent = `${movie.Title || 'N/A'}`;
     elements.year.textContent = `Year: ${movie.Year || 'N/A'}`;
     elements.director.textContent = `Director(s): ${movie.Director || 'N/A'}`;
 
@@ -141,8 +141,8 @@ async function fetchTrivia(movieTitle) {
     } catch (error) {
         console.error("Error fetching trivia:", error);
         questionElement.innerHTML = "Sorry, we couldn't load a trivia question for this movie.";
-        
-        const triviaButtons = document.querySelectorAll('.trivia button');
+
+        const triviaButtons = document.querySelectorAll('.trivia-button');
         triviaButtons.forEach(button => {
             if (button) button.style.display = 'none';
         });
@@ -151,7 +151,7 @@ async function fetchTrivia(movieTitle) {
 
 function checkAnswer(selected) {
     const feedback = document.getElementById("feedback");
-    const buttons = document.querySelectorAll(".trivia button");
+    const buttons = document.querySelectorAll(".trivia-button");
 
     buttons.forEach(button => {
         button.disabled = true;
@@ -182,19 +182,19 @@ async function fetchStreamingAvailability(movieId) {
         }
 
         // Convert data to array if it's not already
-        const servicesArray = Array.isArray(responseData.data) ? 
-            responseData.data : 
+        const servicesArray = Array.isArray(responseData.data) ?
+            responseData.data :
             [responseData.data];
-        
+
         // Map through the services array
         const availabilityList = servicesArray.length > 0 ? servicesArray.map(item => {
             return `
                 <div style="display: flex; align-items: center; margin-bottom: 10px;">
                     <img src="${item.logo || ''}" alt="${item.service_name}" style="width: 100px; height: 100px; margin-right: 30px; margin-left: 20px;">
                     <a href="${item.link}" target="_blank" style="text-decoration: none;">
-                        <div style="background-color: orange; color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer;">
+                        <button class="streaming-button">
                             ${item.service_type}
-                        </div>
+                        </button>
                     </a>
                 </div>
             `;
@@ -209,7 +209,7 @@ async function fetchStreamingAvailability(movieId) {
         document.getElementById('streaming-description').innerHTML = availabilityList;
     } catch (error) {
         console.error("Error fetching streaming availability:", error);
-        document.getElementById('streaming-description').textContent = 
+        document.getElementById('streaming-description').textContent =
             "Unable to retrieve streaming availability data.";
     }
 }
