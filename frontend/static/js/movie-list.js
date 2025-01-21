@@ -113,12 +113,13 @@ async function createGenres(userId) {
 
 async function updateUserPreferences(userId, preferences) {
     try {
-        const response = await fetch(`http://localhost:5010/api/v1/user-preferences?id=${userId}`, {
+        const response = await fetch(`http://localhost:5010/api/v1/user?id=${userId}`, {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
-            body: JSON.stringify(preferences)  // Passa solo la lista di generi selezionati
+            body: JSON.stringify({ preferences })  // Passa solo la lista di generi selezionati
         });
 
         const data = await response.json();

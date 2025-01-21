@@ -123,7 +123,7 @@ async def update_genre(
 ) -> JSONResponse:
     """Update a specific genre."""
     try:
-        update_data = {k: v for k, v in genre.model_dump(by_alias=True).items() if v is not None}
+        update_data = {k: v for k, v in genre.model_dump(by_alias=True, exclude_unset=True, exclude_none=True).items()}
         
         if not update_data:
             return JSONResponse(

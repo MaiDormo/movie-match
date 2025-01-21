@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional, List
+from typing import Optional, List, Union
 from pydantic import BaseModel, Field
 
 class User(BaseModel):
@@ -24,15 +24,13 @@ class User(BaseModel):
         }
 
 class UserUpdate(BaseModel):
-    name: Optional[str]
-    surname: Optional[str]
-    preferences: Optional[List[str]]
+    name: str | None = None
+    surname: str | None = None
+    preferences: list[int] | None = None
 
     class Config:
         json_schema_extra = {
             "example": {
-                "name": "John",
-                "surname": "Doe",
                 "preferences": [28, 14]
             }
         }
