@@ -25,7 +25,7 @@ def create_response(status_code: int, message: str, data: Dict[str, Any] = None)
         "message": message
     }
     if data:
-        content.update(data)
+        content["data"] = data
     return JSONResponse(content=content, status_code=status_code)
 
 async def health_check() -> JSONResponse:

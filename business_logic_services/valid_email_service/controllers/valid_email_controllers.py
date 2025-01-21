@@ -14,7 +14,7 @@ def create_response(status_code: int, message: str, data: Dict[str, Any] = None)
         "message": message
     }
     if data:
-        content.update(data)
+        content["data"] = data
     return JSONResponse(content=content, status_code=status_code)
 
 def parse_email_check_response(data: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
@@ -24,7 +24,7 @@ def parse_email_check_response(data: Dict[str, Any]) -> Tuple[bool, Dict[str, An
     Returns:
         Tuple[bool, Dict]: (is_valid, response_data)
     """
-    email_check = data.get('data', {}).get('email_check', {})
+    email_check = data.get('data', {})
     email = email_check.get('email', '')
     
     # Check format validity
@@ -84,7 +84,6 @@ async def validate_email(
         if adapter_response.get("status") == "error":
             return create_response(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                status="fail",
                 message=adapter_response.get("message", "Email validation failed"),
                 data={"email": adapter_response.get("message", "Unknown error occurred")}
             )
@@ -95,7 +94,6 @@ async def validate_email(
         if not is_valid:
             return create_response(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                status="fail",
                 message="Email validation failed",
                 data=validation_data
             )

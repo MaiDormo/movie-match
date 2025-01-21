@@ -1,4 +1,3 @@
-// Add this function at the top of login.js
 async function checkExistingToken() {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -29,7 +28,6 @@ async function checkExistingToken() {
     }
 }
 
-// Add this line after the existing code
 document.addEventListener('DOMContentLoaded', checkExistingToken);
 
 async function handleLogin(event) {
@@ -58,7 +56,7 @@ async function handleLogin(event) {
 
         const data = await response.json();
 
-        if (response.ok) {
+        if (response.ok && data.status === 'success') {
             localStorage.setItem('token', data.data.access_token);
             window.location.href = '/';
         } else {

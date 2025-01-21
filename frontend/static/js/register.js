@@ -82,14 +82,19 @@ async function handleRegister(event) {
 
         const data = await response.json();
 
-        if (response.ok) {
+        if (response.ok && data.status === 'success') {
             window.location.href = '/login';
         } else {
-            if (data.status === 'fail' && data.data) {
-                Object.keys(data.data).forEach(field => {
-                    showError(field, data.data[field]);
-                });
-                showGeneralError('Please correct the errors above');
+            if (data.status === 'error') {
+                // Show the general error message
+                showGeneralError(data.message || 'Registration failed. Please try again.');
+                
+                // If there are field-specific errors in the data object, show them
+                if (data.data) {
+                    Object.keys(data.data).forEach(field => {
+                        showError(field, data.data[field]);
+                    });
+                }
             } else {
                 showGeneralError(data.message || 'Registration failed. Please try again.');
             }
@@ -99,7 +104,6 @@ async function handleRegister(event) {
         showGeneralError('Network error occurred. Please check your connection and try again.');
     }
 }
-
 function showError(field, message) {
     const input = document.getElementById(field);
     const errorDiv = document.getElementById(`${field}Error`);

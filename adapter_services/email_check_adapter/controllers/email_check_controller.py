@@ -29,7 +29,7 @@ def create_response(status_code: int, message: str, data: Dict[str, Any] = None)
         "message": message
     }
     if data:
-        content.update(data)
+        content["data"] = data
     return JSONResponse(content=content, status_code=status_code)
 
 def filter_response(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -91,7 +91,7 @@ async def check_email(
         return create_response(
             status_code=status.HTTP_200_OK,
             message="Email check retrieved successfully",
-            data={"email_check": filter_response(data)}
+            data= filter_response(data)
         )
 
     except HTTPError as http_err:

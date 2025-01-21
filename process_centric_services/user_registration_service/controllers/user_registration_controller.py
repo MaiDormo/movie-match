@@ -8,16 +8,12 @@ from models.user_registration_model import UserRegistration
 VALID_CHECK_SERVICE_URL = "http://valid-email-service:5000/api/v1/validate-email"
 USER_DB_ADAPTER_URL = "http://user-db-adapter:5000/api/v1/user"
 
-def create_response(
-    status_code: int, 
-    message: str = None, 
-    data: Dict[str, Any] = None, 
-    status: str = "success"
-) -> JSONResponse:
-    """Create a standardized JSON response"""
-    content = {"status": status}
-    if message:
-        content["message"] = message
+def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+    """Create a standardized API response"""
+    content = {
+        "status": "success" if status_code < 400 else "error",
+        "message": message
+    }
     if data:
         content["data"] = data
     return JSONResponse(content=content, status_code=status_code)
@@ -42,35 +38,35 @@ def handle_service_request(method: str, url: str, **kwargs) -> Dict:
             error_detail = error_data.get('detail') or error_data.get('message')
             if error_data.get('data'):
                 return error_data  # Return the error response directly for validation errors
-            raise HTTPException(
+            return create_response(
                 status_code=response.status_code,
-                detail=error_detail or str(http_err)
+                message=error_detail or str(http_err)
             )
         except ValueError:
-            raise HTTPException(
+            return create_response(
                 status_code=response.status_code,
-                detail=str(http_err)
+                message=str(http_err)
             )
             
     except requests.exceptions.ConnectionError:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Service is temporarily unavailable. Please try again later."
+            message="Service is temporarily unavailable. Please try again later."
         )
     except requests.exceptions.Timeout:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail="Request timed out. Please try again."
+            message="Request timed out. Please try again."
         )
     except requests.exceptions.RequestException as req_err:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while processing your request: {req_err}"
+            message=f"An error occurred while processing your request: {req_err}"
         )
     except ValueError as val_err:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid data format: {val_err}"
+            message=f"Invalid data format: {val_err}"
         )
 
 async def health_check() -> JSONResponse:
@@ -87,7 +83,6 @@ async def registrate_user(user: UserRegistration = Body(...)) -> JSONResponse:
         if user.password != user.password_confirmation:
             return create_response(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                status="fail",
                 data={"password": "The password and password confirmation do not match!"}
             )
 
@@ -99,10 +94,9 @@ async def registrate_user(user: UserRegistration = Body(...)) -> JSONResponse:
         )
         
         # Handle email validation errors
-        if email_validation.get("status") == "fail" or email_validation.get("status") == "error":
+        if email_validation.get("status") == "error":
             return create_response(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                status="fail",
                 message=email_validation.get("message", "Email validation failed"),
                 data=email_validation.get("data") or {"email": email_validation.get("detail", "Invalid email")}
             )
@@ -124,10 +118,9 @@ async def registrate_user(user: UserRegistration = Body(...)) -> JSONResponse:
                 json=user_data
             )
             
-            if db_response.get("status") == "fail" or db_response.get("status") == "error":
+            if db_response.get("status") == "error":
                 return create_response(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    status="fail",
                     message=db_response.get("message", "User registration failed"),
                     data=db_response.get("data") or {"error": db_response.get("detail", "Registration error")}
                 )
@@ -136,7 +129,6 @@ async def registrate_user(user: UserRegistration = Body(...)) -> JSONResponse:
             if db_err.status_code == 400:
                 return create_response(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    status="fail",
                     data={"email": "This email is already registered"}
                 )
             raise
@@ -151,7 +143,7 @@ async def registrate_user(user: UserRegistration = Body(...)) -> JSONResponse:
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}"
+            message=f"An unexpected error occurred: {str(e)}"
         )
