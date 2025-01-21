@@ -7,8 +7,7 @@ import requests
 import re
 
 class Settings(BaseModel):
-    tmdb_url: str = "https://api.themoviedb.org/3/search/multi"
-    tmdb_url_id: str = "https://api.themoviedb.org/3/find/external_id"
+    tmdb_url: str = "https://api.themoviedb.org/3/movie/"
     tmdb_discover_movie: str = "https://api.themoviedb.org/3/discover/movie"
     tmdb_api_key: str = os.getenv("TMDB_API_KEY")
     external_source: str = "imdb_id"
@@ -23,7 +22,7 @@ def create_response(status_code: int, message: str, data: Dict[str, Any] = None)
         "message": message
     }
     if data:
-        content.update(data)
+        content["data"] = data
     return JSONResponse(content=content, status_code=status_code)
 
 def make_request(url: str, headers: dict, params: dict) -> dict:
@@ -61,19 +60,19 @@ def is_valid_language(language: str) -> bool:
 
 def filter_data(tmdb_data: dict) -> dict:
     """Filter and extract relevant movie data."""
-    if not tmdb_data.get("results"):
+    if not tmdb_data.get("imdb_id"):
         return create_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            message="No results found"
+            message=f"No IMDB_ID found for {tmdb_data.get('id')}"
         )
-    return tmdb_data["results"][0]
+    return tmdb_data["imdb_id"]
 
-async def get_movie_popularity(
-    title: str = Query(...), 
+async def get_movie_tmdb_id(
+    id: int = Query(...), 
     language: str = Query(...), 
     settings: Settings = Depends(get_settings)
 ):
-    if not title or not language:
+    if not id or not language:
         return create_response(
             status_code=status.HTTP_400_BAD_REQUEST,
             message="Title and language are required"
@@ -90,93 +89,26 @@ async def get_movie_popularity(
         "Authorization": f"Bearer {settings.tmdb_api_key}"
     }
     params = {
-        "query": title,
         "language": language,
     }
 
     try:
-        movies = make_request(settings.tmdb_url, headers, params)
-        movie = filter_data(movies)
+        response = make_request(settings.tmdb_url + f"{id}", headers, params)
+        
+        if isinstance(response,JSONResponse):
+            return response
+        
+        imdb_id = filter_data(response)
+
         return create_response(
             status_code=status.HTTP_200_OK,
-            message="Movie details retrieved successfully",
-            data=movie
+            message="IMDB ID retrieved successfully",
+            data= {"imdb_id": imdb_id}
         )
     except HTTPException as e:
         return create_response(
             status_code=e.status_code,
             message=str(e.detail)
-        )
-    
-
-async def get_movie_popularity_id(
-    id: str = Query(...), 
-    language: str = Query(...), 
-    settings: Settings = Depends(get_settings)
-):
-    # Check if id and language are present and validate language format
-    if not id or not language:
-        return create_response(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            message="ID and language are required",
-            status="error"
-        )
-    
-    if not is_valid_language(language):
-        return create_response(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            message="Invalid language format. Expected format: en-US, de-DE, it-IT, etc.",
-            status="error"
-        )
-    
-    headers = {
-        "accept": "application/json",
-        "Authorization": f"Bearer {settings.tmdb_api_key}"
-    }
-
-    params = {
-        "external_id": id,
-        "language": language,
-        "external_source": settings.external_source,
-    }
-
-    try:    
-        movies = make_request(settings.tmdb_url_id + f"/{id}", headers, params)
-        
-        if 'Error' in movies:
-            return create_response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                message="Error retrieving movie details",
-                data={"error": movies['Error']},
-            )
-        return create_response(
-            status_code=status.HTTP_200_OK,
-            message="Movie details retrieved successfully",
-            data=movies
-        )
-    except HTTPException as e:
-        return create_response(
-            status_code=e.status_code,
-            message="HTTP error occurred",
-            data={"error": str(e.detail)},
-        )
-    except requests.exceptions.ConnectionError as e:
-        return create_response(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            message="Connection error occurred",
-            data={"error": str(e)},
-        )
-    except requests.exceptions.Timeout as e:
-        return create_response(
-            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            message="Request timed out",
-            data={"error": str(e)},
-        )
-    except requests.exceptions.RequestException as e:
-        return create_response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            message="An error occurred while calling the TMDB API",
-            data={"error": str(e)},
         )
 
 async def discover_movies(
@@ -205,11 +137,15 @@ async def discover_movies(
         "sort_by": sort_by,
         "include_adult": False,
         "include_video": False,
-        "page": 1
+        "page": 1,
+        "vote_count.gte": 100 #Added mininum vote count to ensure rating reliability
     }
 
     try:
         movies = make_request(settings.tmdb_discover_movie, headers, params)
+
+        if isinstance(movies,JSONResponse):
+            return movies
         
         if not movies.get("results"):
             return create_response(

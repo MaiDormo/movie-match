@@ -39,7 +39,7 @@ function loadMovies(query = '') {
                     `;
 
                     movieItem.onclick = () => {
-                        console.log(`Selected movie: ${movie.imdbID}`);
+                        window.location.href = `/movie?id=${movie.imdbID}`;
                     };
 
                     movieList.appendChild(movieItem);
@@ -55,6 +55,26 @@ function loadMovies(query = '') {
         });
 }
 
+async function getMovieImdbId(tmdbId, defaultImdbId = 'tt0111161') { // Default to "The Shawshank Redemption"
+    try {
+        console.log('http://localhost:5003/api/v1/find-id?id=${tmdbId}&language=en-US');
+        const response = await fetch(`http://localhost:5003/api/v1/find-id?id=${tmdbId}&language=en-US`);
+        const data = await response.json();
+
+        if (response.ok && data.status === "success" && data.data && data.data.imdb_id) {
+            window.location.href = `/movie?id=${data.data.imdb_id}`;
+        } else {
+            console.error('Error fetching IMDb ID:', data.message || 'Unknown error');
+            console.warn('Falling back to default movie ID:', defaultImdbId);
+            window.location.href = `/movie?id=${defaultImdbId}`;
+        }
+    } catch (error) {
+        console.error('Error fetching IMDb ID:', error);
+        console.warn('Falling back to default movie ID:', defaultImdbId);
+        window.location.href = `/movie?id=${defaultImdbId}`;
+    }
+}
+
 async function discoverMoviesByGenre() {
     const movieList = document.getElementById('movie-list');
     const spinner = document.getElementById('loading-spinner');
@@ -65,6 +85,8 @@ async function discoverMoviesByGenre() {
 
     try {
         const userGenres = await getUserGenres("0b8ac00c-a52b-4649-bd75-699b49c00ce3");
+        console.log('User genres:', userGenres);
+
         const preferredGenres = userGenres
             .filter(genre => genre.isPreferred)
             .map(genre => genre.genreId)
@@ -81,26 +103,29 @@ async function discoverMoviesByGenre() {
 
         spinner.style.display = 'none';
 
-        if (data.status === "success" && Array.isArray(data.results)) {
-            data.results.forEach(movie => {
+        if (data.status === "success" && data.data?.results) {
+            data.data.results.forEach(movie => {
+                if (!movie) return; // Skip if movie is undefined
+
                 const movieItem = document.createElement('div');
                 movieItem.classList.add('movie-item');
 
-                // Costruisci l'URL del poster
-                const posterUrl = movie.poster_path ? `https://image.tmdb.org/t/p/original${movie.poster_path}` : 'https://via.placeholder.com/50x75';
+                const posterUrl = movie.poster_path 
+                    ? `https://image.tmdb.org/t/p/original${movie.poster_path}` 
+                    : 'https://via.placeholder.com/50x75';
 
-                // Ottieni i nomi dei generi dai genreIds
-                const genreNames = movie.genre_ids
+                const genreNames = (movie.genre_ids || [])
                     .map(id => {
                         const genre = userGenres.find(g => g.genreId === id);
-                        return genre ? genre.name : 'N/A';
+                        return genre ? genre.name : null;
                     })
+                    .filter(name => name) // Remove null values
                     .join(', ');
 
                 movieItem.innerHTML = `
-                    <img src="${posterUrl}" alt="${movie.title}">
+                    <img src="${posterUrl}" alt="${movie.title || 'Movie poster'}">
                     <div class="movie-info">
-                        <div class="title">${movie.title} (${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'})</div>
+                        <div class="title">${movie.title || 'Unknown'} (${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'})</div>
                         <div class="details">
                             <div><strong>Genre:</strong> ${genreNames || 'N/A'}</div>
                             <div><strong>Rating:</strong> ${movie.vote_average || 'N/A'}</div>
@@ -108,9 +133,10 @@ async function discoverMoviesByGenre() {
                     </div>
                 `;
 
-                movieItem.onclick = () => {
-                    console.log(`Selected movie: ${movie.id}`);
-                };
+                // Add click event handler with error handling
+                movieItem.addEventListener('click', async () => {
+                        await getMovieImdbId(movie.id)
+                    });
 
                 movieList.appendChild(movieItem);
             });
@@ -118,13 +144,11 @@ async function discoverMoviesByGenre() {
             movieList.innerHTML = 'No movies found.';
         }
     } catch (error) {
-        spinner.style.display = 'none';
         console.error('Error discovering movies:', error);
+        spinner.style.display = 'none';
         movieList.innerHTML = 'Error discovering movies. Please try again.';
     }
 }
-
-
 
 async function createGenres(userId) {
     const genreTagsContainer = document.getElementById('genre-tags');
