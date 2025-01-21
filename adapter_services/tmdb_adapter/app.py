@@ -2,12 +2,26 @@ import os
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from routes.tmdb_routes import router as tmdb_router
 
 app = FastAPI(
     title="TMDB API Adapter",
     description="An adapter service for OMDB API using FastAPI",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5005",
+        "http://127.0.0.1:5005",
+        "http://localhost:5006",
+        "http://127.0.0.1:5006"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(tmdb_router)

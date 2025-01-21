@@ -11,6 +11,13 @@
     <div class="container">
         <div class="left-box">
             <div class="search-bar">
+                <div class="custom-dropdown">
+                    <button id="dropdown-button" class="dropdown-button">Search by Title</button>
+                    <ul id="dropdown-menu" class="dropdown-menu hidden">
+                        <li data-value="title">Search by Title</li>
+                        <li data-value="genre">Search by Genre</li>
+                    </ul>
+                </div>                            
                 <input type="text" placeholder="Search for a movie..." class="search-input" id="search-input">
                 <button class="search-button" id="search-button">Search</button>
             </div>

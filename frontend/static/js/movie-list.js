@@ -55,28 +55,93 @@ function loadMovies(query = '') {
         });
 }
 
+async function discoverMoviesByGenre() {
+    const movieList = document.getElementById('movie-list');
+    const spinner = document.getElementById('loading-spinner');
+
+    movieList.innerHTML = '';
+    movieList.appendChild(spinner);
+    spinner.style.display = 'block';
+
+    try {
+        const userGenres = await getUserGenres("0b8ac00c-a52b-4649-bd75-699b49c00ce3");
+        const preferredGenres = userGenres
+            .filter(genre => genre.isPreferred)
+            .map(genre => genre.genreId)
+            .join(',');
+
+        if (!preferredGenres) {
+            alert('No preferred genres found!');
+            spinner.style.display = 'none';
+            return;
+        }
+
+        const response = await fetch(`http://localhost:5003/api/v1/discover-movies?language=en-EN&with_genres=${preferredGenres}&vote_avg_gt=7.0&sort_by=popularity.desc`);
+        const data = await response.json();
+
+        spinner.style.display = 'none';
+
+        if (data.status === "success" && Array.isArray(data.results)) {
+            data.results.forEach(movie => {
+                const movieItem = document.createElement('div');
+                movieItem.classList.add('movie-item');
+
+                // Costruisci l'URL del poster
+                const posterUrl = movie.poster_path ? `https://image.tmdb.org/t/p/original${movie.poster_path}` : 'https://via.placeholder.com/50x75';
+
+                // Ottieni i nomi dei generi dai genreIds
+                const genreNames = movie.genre_ids
+                    .map(id => {
+                        const genre = userGenres.find(g => g.genreId === id);
+                        return genre ? genre.name : 'N/A';
+                    })
+                    .join(', ');
+
+                movieItem.innerHTML = `
+                    <img src="${posterUrl}" alt="${movie.title}">
+                    <div class="movie-info">
+                        <div class="title">${movie.title} (${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'})</div>
+                        <div class="details">
+                            <div><strong>Genre:</strong> ${genreNames || 'N/A'}</div>
+                            <div><strong>Rating:</strong> ${movie.vote_average || 'N/A'}</div>
+                        </div>
+                    </div>
+                `;
+
+                movieItem.onclick = () => {
+                    console.log(`Selected movie: ${movie.id}`);
+                };
+
+                movieList.appendChild(movieItem);
+            });
+        } else {
+            movieList.innerHTML = 'No movies found.';
+        }
+    } catch (error) {
+        spinner.style.display = 'none';
+        console.error('Error discovering movies:', error);
+        movieList.innerHTML = 'Error discovering movies. Please try again.';
+    }
+}
+
+
+
 async function createGenres(userId) {
     const genreTagsContainer = document.getElementById('genre-tags');
 
     try {
-        // Chiama la funzione per ottenere i generi con `name` e `isPreferred`
         const userGenres = await getUserGenres(userId);
-
-        // Pulisce il contenitore dei tag esistente
         genreTagsContainer.innerHTML = '';
 
-        // Crea i tag basandosi sui generi ottenuti
         userGenres.forEach(genre => {
             const tag = document.createElement('div');
             tag.classList.add('genre-tag');
             tag.textContent = genre.name;
 
-            // Aggiungi una classe se è un genere preferito
             if (genre.isPreferred) {
                 tag.classList.add('selected');
             }
 
-            // Aggiungi toggle per selezione/deselezione
             tag.onclick = () => {
                 tag.classList.toggle('selected');
             };
@@ -86,17 +151,15 @@ async function createGenres(userId) {
 
         const confirmButton = document.getElementById('confirm-button');
         confirmButton.onclick = () => {
-            // Ottieni i genreId selezionati
             const selectedGenres = Array.from(document.querySelectorAll('.genre-tag.selected'))
                 .map(tag => {
-                    // Trova il genere selezionato nella lista dei generi dell'utente
                     const genre = userGenres.find(g => g.name === tag.textContent);
                     return genre ? genre.genreId : null;
                 })
-                .filter(genreId => genreId !== null); // Filtra i generi non trovati
+                .filter(genreId => genreId !== null);
 
             if (selectedGenres.length > 0) {
-                updateUserPreferences(userId, selectedGenres); // Chiamata all'API per aggiornare le preferenze
+                updateUserPreferences(userId, selectedGenres);
             } else {
                 alert('No genres selected!');
             }
@@ -114,7 +177,7 @@ async function updateUserPreferences(userId, preferences) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ preferences })  // Passa solo la lista di generi selezionati
+            body: JSON.stringify({ preferences })
         });
 
         const data = await response.json();
@@ -130,15 +193,53 @@ async function updateUserPreferences(userId, preferences) {
     }
 }
 
-// Initialize everything when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Add click event listener to search button
     const searchButton = document.getElementById('search-button');
+    const searchInput = document.getElementById('search-input');
+    const dropdownButton = document.getElementById('dropdown-button');
+    const dropdownMenu = document.getElementById('dropdown-menu');
+
+    let searchMode = 'title';
+
     if (searchButton) {
-        searchButton.addEventListener('click', () => loadMovies());
+        searchButton.addEventListener('click', () => {
+            if (searchMode === 'genre') {
+                discoverMoviesByGenre();
+            } else {
+                loadMovies();
+            }
+        });
     }
 
-    // Load initial movies and genres
+    if (dropdownButton && dropdownMenu) {
+        dropdownButton.addEventListener('click', () => {
+            dropdownMenu.classList.toggle('hidden');
+        });
+
+        dropdownMenu.addEventListener('click', (event) => {
+            if (event.target.tagName === 'LI') {
+                const selectedValue = event.target.getAttribute('data-value');
+                searchMode = selectedValue;
+                dropdownButton.textContent = event.target.textContent;
+                dropdownMenu.classList.add('hidden');
+
+                if (searchMode === 'genre') {
+                    searchInput.value = 'The search will be based on your favorite genres';
+                    searchInput.disabled = true;
+                } else {
+                    searchInput.value = '';
+                    searchInput.disabled = false;
+                }
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.custom-dropdown')) {
+                dropdownMenu.classList.add('hidden');
+            }
+        });
+    }
+
     loadMovies('Avengers');
     createGenres("0b8ac00c-a52b-4649-bd75-699b49c00ce3");
 });
