@@ -162,10 +162,10 @@ services:
     container_name: user-login-service
     ports:
       - "5014:5000"
-    depends_on:
+    # depends_on:
       # user-db-adapter:
       #   condition: service_healthy
-      - user-db-adapter
+      #- user-db-adapter
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
@@ -181,7 +181,7 @@ services:
       - "5006:5000"
     volumes:
       - ./frontend:/frontend
-    depends_on:
+    # depends_on:
       # omdb-adapter:
       #   condition: service_healthy
       # streaming-availability-adapter:
@@ -194,13 +194,13 @@ services:
       #   condition: service_healthy
       # user-registration-service:
       #   condition: service_healthy
-      - omdb-adapter
-      - streaming-availability-adapter
-      - spotify-adapter
-      - youtube-adapter
-      - user-login-service
-      - user-registration-service
-      - genres-db-adapter
+      # - omdb-adapter
+      # - streaming-availability-adapter
+      # - spotify-adapter
+      # - youtube-adapter
+      # - user-login-service
+      # - user-registration-service
+      # - genres-db-adapter
 
 # Networks
 networks:
