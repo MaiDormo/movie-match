@@ -1,143 +1,137 @@
-from fastapi import Depends, Query
+from fastapi import Depends, Query, HTTPException, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import os
 import requests
-from typing import List
-import json
+from typing import List, Dict, Any, Optional
+from functools import wraps
 
 class Settings(BaseModel):
-    omdb_url: str = "http://www.omdbapi.com/"
-    omdb_api_key: str = os.getenv("OMDB_API_KEY")
-
-def get_settings():
+    """Configuration settings for OMDB adapter"""
+    omdb_url: str = Field(default="http://www.omdbapi.com/", description="OMDB API base URL")
+    omdb_api_key: str = Field(default=os.getenv("OMDB_API_KEY"), description="OMDB API key from environment")
+def get_settings() -> Settings:
+    """Get application settings"""
     return Settings()
 
-def handle_error(e, status_code, message):
-    response = {
-        "status": "error",
-        "code": status_code,
-        "message": message,
-        "error": str(e)
+def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+    """Create a standardized API response"""
+    content = {
+        "status": "success" if status_code < 400 else "error",
+        "message": message
     }
-    return JSONResponse(content=response, status_code=status_code)
+    if data:
+        content["data"] = data
+    return JSONResponse(content=content, status_code=status_code)
 
-def make_request(url, params):
-    response = requests.get(url, params=params)
+def handle_api_errors(func):
+    """Decorator for handling API request errors"""
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except requests.exceptions.HTTPError as e:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"HTTP error occurred: {str(e)}"
+            )
+        except requests.exceptions.ConnectionError:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="OMDB API is currently unavailable"
+            )
+        except requests.exceptions.Timeout:
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail="Request to OMDB API timed out"
+            )
+        except requests.exceptions.RequestException as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error calling OMDB API: {str(e)}"
+            )
+    return wrapper
+
+def make_request(url: str, params: Dict[str, str]) -> Dict[str, Any]:
+    """Make HTTP request to OMDB API"""
+    response = requests.get(url, params=params, timeout=10)
     response.raise_for_status()
-    return response.json()
+    data = response.json()
+    
+    if 'Error' in data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=data['Error']
+        )
+    return data
 
-async def get_movies(title: str = Query(...), settings: Settings = Depends(get_settings)):
+@handle_api_errors
+async def get_movies(
+    title: str = Query(..., description="Movie title to search for"),
+    settings: Settings = Depends(get_settings)
+) -> JSONResponse:
+    """Search movies by title"""
     params = {
         "apikey": settings.omdb_api_key,
-        "s": title,  # changed to be the search parameter
+        "s": title,
         "type": "movie"
     }
     
-    try:
-        movies = make_request(settings.omdb_url, params=params)
-        
-        if 'Error' in movies:
-            response = {
-                "status": "fail",
-                "message": movies['Error']
-            }
-            return JSONResponse(content=response, status_code=404)
+    movies = make_request(settings.omdb_url, params)
+    return create_response(
+        status_code=status.HTTP_200_OK,
+        message="Movies retrieved successfully",
+        data=movies
+    )
 
-        return JSONResponse(content=movies, status_code=200)
-    except requests.exceptions.HTTPError as e:
-        return handle_error(e, 404, "HTTP error occurred")
-    except requests.exceptions.ConnectionError as e:
-        return handle_error(e, 503, "Connection error occurred")
-    except requests.exceptions.Timeout as e:
-        return handle_error(e, 504, "Request timed out")
-    except requests.exceptions.RequestException as e:
-        return handle_error(e, 500, "An error occurred while calling the OMDB API")
-
-async def get_movie_id(id: str = Query(...), settings: Settings = Depends(get_settings)):
+@handle_api_errors
+async def get_movie_id(
+    id: str = Query(..., description="IMDB movie ID"),
+    settings: Settings = Depends(get_settings)
+) -> Dict[str, Any]:
+    """Get movie details by IMDB ID"""
     params = {
         "apikey": settings.omdb_api_key,
         "i": id,
     }
     
-    try:
-        movie = make_request(settings.omdb_url, params=params)
-        
-        if 'Error' in movie:
-            response = {
-                "status": "fail",
-                "message": movie['Error']
-            }
-            return JSONResponse(content=response, status_code=404)
-        
-        return movie
-    except requests.exceptions.HTTPError as e:
-        return handle_error(e, 404, "HTTP error occurred")
-    except requests.exceptions.ConnectionError as e:
-        return handle_error(e, 503, "Connection error occurred")
-    except requests.exceptions.Timeout as e:
-        return handle_error(e, 504, "Request timed out")
-    except requests.exceptions.RequestException as e:
-        return handle_error(e, 500, "An error occurred while calling the OMDB API")
+    return make_request(settings.omdb_url, params)
 
-
-# Nuova funzione get_movies_with_info
-async def get_movies_with_info(title: str = Query(...), settings: Settings = Depends(get_settings)):
+@handle_api_errors
+async def get_movies_with_info(
+    title: str = Query(..., description="Movie title to search for"),
+    settings: Settings = Depends(get_settings)
+) -> JSONResponse:
+    """Search movies and include additional details"""
     params = {
         "apikey": settings.omdb_api_key,
-        "s": title,  # Cambiato per essere il parametro di ricerca
+        "s": title,
         "type": "movie"
     }
     
-    try:
-        # Effettua la richiesta al servizio OMDB
-        movies = make_request(settings.omdb_url, params=params)
-        
-        # Controlla se c'è un errore nella risposta
-        if 'Error' in movies:
-            response = {
-                "status": "fail",
-                "message": movies['Error']
-            }
-            return JSONResponse(content=response, status_code=404)
-        
-        # Estrai solo la lista dei film dalla chiave "Search"
-        films_list = movies.get("Search", [])
-
-        # Lista per salvare i film con dettagli aggiuntivi
-        detailed_movies = []
-
-        for movie in films_list:
-            # Ottieni i dettagli del film usando l'ID
-            movie_details = await get_movie_id(id=movie["imdbID"], settings=settings)
-            
-            # Aggiungi i campi "Genre" e "imdbRating" al film originale
-            movie_with_details = {
-                **movie,
-                "Genre": movie_details.get("Genre", "N/A"),
-                "imdbRating": movie_details.get("imdbRating", "N/A")
-            }
-            detailed_movies.append(movie_with_details)
-
-        # Restituisci la lista dei film con i dettagli aggiuntivi
-        return JSONResponse(content=detailed_movies, status_code=200)
-
-    except requests.exceptions.HTTPError as e:
-        return handle_error(e, 404, "HTTP error occurred")
-    except requests.exceptions.ConnectionError as e:
-        return handle_error(e, 503, "Connection error occurred")
-    except requests.exceptions.Timeout as e:
-        return handle_error(e, 504, "Request timed out")
-    except requests.exceptions.RequestException as e:
-        return handle_error(e, 500, "An error occurred while calling the OMDB API")
-
+    # Get initial movie list
+    movies = make_request(settings.omdb_url, params)
+    films_list = movies.get("Search", [])
     
+    # Get detailed information for each movie
+    detailed_movies = []
+    for movie in films_list:
+        movie_details = await get_movie_id(id=movie["imdbID"], settings=settings)
+        detailed_movies.append({
+            **movie,
+            "Genre": movie_details.get("Genre", "N/A"),
+            "imdbRating": movie_details.get("imdbRating", "N/A")
+        })
 
+    return create_response(
+        status_code=status.HTTP_200_OK,
+        message="Movies retrieved successfully",
+        data=detailed_movies
+    )
 
-
-async def health_check():
-    response = {
-        "status": "success",
-        "message": "OMDB API Adapter is up and running!"
-    }
-    return JSONResponse(content=response, status_code=200)
+async def health_check() -> JSONResponse:
+    """Health check endpoint"""
+    return create_response(
+        status_code=status.HTTP_200_OK,
+        message="OMDB API Adapter is up and running!"
+    )

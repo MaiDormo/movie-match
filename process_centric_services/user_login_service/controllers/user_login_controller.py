@@ -18,16 +18,14 @@ def get_settings() -> Settings:
     """Get application settings."""
     return Settings()
 
-def create_response(
-    status_code: int, 
-    message: str, 
-    data: Dict[str, Any] = None, 
-    status: str = "success"
-) -> JSONResponse:
-    """Create a standardized JSON response."""
-    content = {"status": status, "message": message}
+def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+    """Create a standardized API response"""
+    content = {
+        "status": "success" if status_code < 400 else "error",
+        "message": message
+    }
     if data:
-        content["data"] = data
+        content.update(data)
     return JSONResponse(content=content, status_code=status_code)
 
 async def health_check() -> JSONResponse:
@@ -43,19 +41,19 @@ def verify_token(token: str, settings: Settings = Depends(get_settings)) -> str:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         if email := payload.get("sub"):
             return email
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Invalid token: missing subject claim"
+            message="Invalid token: missing subject claim"
         )
     except jwt.ExpiredSignatureError:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired"
+            message="Token has expired"
         )
     except jwt.InvalidTokenError:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token format"
+            message="Invalid token format"
         )
 
 def create_access_token(
@@ -70,9 +68,9 @@ def create_access_token(
     try:
         return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     except Exception as e:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating access token: {str(e)}"
+            message=f"Error creating access token: {str(e)}"
         )
 
 async def validate_credentials(email: str, password: str) -> Dict[str, Any]:
@@ -87,23 +85,23 @@ async def validate_credentials(email: str, password: str) -> Dict[str, Any]:
         return response.json()
     except requests.exceptions.HTTPError as http_err:
         if response.status_code == status.HTTP_404_NOT_FOUND:
-            raise HTTPException(
+            raise create_response(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Email not found. Please check your email and try again."
+                message="Email not found. Please check your email and try again."
             )
-        raise HTTPException(
+        raise create_response(
             status_code=response.status_code,
-            detail=f"Error validating credentials: {str(http_err)}"
+            message=f"Error validating credentials: {str(http_err)}"
         )
     except requests.exceptions.Timeout:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail="Database service timeout"
+            message="Database service timeout"
         )
     except requests.exceptions.RequestException as req_err:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database service error: {str(req_err)}"
+            message=f"Database service error: {str(req_err)}"
         )
 
 async def login(
@@ -168,10 +166,10 @@ async def refresh_token(
                 token_type=TokenType.BEARER
             ).model_dump()
         )
-    except HTTPException:
+    except create_response:
         raise
     except Exception as e:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error refreshing token: {str(e)}"
+            message=f"Error refreshing token: {str(e)}"
         )

@@ -1,6 +1,7 @@
-from fastapi import Depends, Query
+from fastapi import Depends, Query, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from typing import Dict, Any
 import os
 import requests
 import re
@@ -15,45 +16,79 @@ class Settings(BaseModel):
 def get_settings():
     return Settings()
 
-def handle_error(e, status_code, message):
-    response = {
-        "status": "error",
-        "code": status_code,
-        "message": message,
-        "error": str(e) if e else None
+def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+    """Create a standardized API response"""
+    content = {
+        "status": "success" if status_code < 400 else "error",
+        "message": message
     }
-    return JSONResponse(content=response, status_code=status_code)
+    if data:
+        content.update(data)
+    return JSONResponse(content=content, status_code=status_code)
 
-def make_request(url, headers, params):
-    response = requests.get(url, headers=headers, params=params)
-    response.raise_for_status()
-    return response.json()
+def make_request(url: str, headers: dict, params: dict) -> dict:
+    """Make HTTP request with error handling."""
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        return create_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message=str(e)
+        )
+    except requests.exceptions.ConnectionError:
+        return create_response(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message="TMDB API is currently unavailable"
+        )
+    except requests.exceptions.Timeout:
+        return create_response(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            message="Request to TMDB API timed out"
+        )
+    except requests.exceptions.RequestException as e:
+        return create_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="Error callinng TMDB API",
+            data={"error": str(e)}
+        )
 
 def is_valid_language(language: str) -> bool:
+    """Validate language format."""
     pattern = re.compile(r'^[a-z]{2}-[A-Z]{2}$')
     return bool(pattern.match(language))
 
-
-def filter_data(tmdb_data):
+def filter_data(tmdb_data: dict) -> dict:
+    """Filter and extract relevant movie data."""
+    if not tmdb_data.get("results"):
+        return create_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="No results found"
+        )
     return tmdb_data["results"][0]
 
 async def get_movie_popularity(
-        title: str = Query(...), 
-        language: str = Query(...), 
-        settings: Settings = Depends(get_settings)):
-    
-    # Check if id and language are present and validate language format
+    title: str = Query(...), 
+    language: str = Query(...), 
+    settings: Settings = Depends(get_settings)
+):
     if not title or not language:
-        return handle_error(None, 400, "ID and language are required")
+        return create_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Title and language are required"
+        )
     
     if not is_valid_language(language):
-        return handle_error(None, 400, "Invalid language format. Expected format: en-US, de-DE, it-IT, etc.")
-    
+        raise create_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid language format. Expected format: en-US, de-DE, it-IT, etc."
+        )
+
     headers = {
         "accept": "application/json",
-        "Authorization": "Bearer " + settings.tmdb_api_key
+        "Authorization": f"Bearer {settings.tmdb_api_key}"
     }
-
     params = {
         "query": title,
         "language": language,
@@ -61,42 +96,42 @@ async def get_movie_popularity(
 
     try:
         movies = make_request(settings.tmdb_url, headers, params)
-        
-        if 'Error' in movies:
-            response = {
-                "status": "fail",
-                "message": movies['Error']
-            }
-            return JSONResponse(content=response, status_code=404)
-        
         movie = filter_data(movies)
-        return JSONResponse(content=movie, status_code=200)
+        return create_response(
+            status_code=status.HTTP_200_OK,
+            message="Movie details retrieved successfully",
+            data=movie
+        )
+    except HTTPException as e:
+        return create_response(
+            status_code=e.status_code,
+            message=str(e.detail)
+        )
     
-    except requests.exceptions.HTTPError as e:
-        return handle_error(e, 404, "HTTP error occurred")
-    except requests.exceptions.ConnectionError as e:
-        return handle_error(e, 503, "Connection error occurred")
-    except requests.exceptions.Timeout as e:
-        return handle_error(e, 504, "Request timed out")
-    except requests.exceptions.RequestException as e:
-        return handle_error(e, 500, "An error occurred while calling the TMDB API")
-
 
 async def get_movie_popularity_id(
-        id: str = Query(...), 
-        language: str = Query(...), 
-        settings: Settings = Depends(get_settings)):
-    
+    id: str = Query(...), 
+    language: str = Query(...), 
+    settings: Settings = Depends(get_settings)
+):
     # Check if id and language are present and validate language format
     if not id or not language:
-        return handle_error(None, 400, "ID and language are required")
+        return create_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="ID and language are required",
+            status="error"
+        )
     
     if not is_valid_language(language):
-        return handle_error(None, 400, "Invalid language format. Expected format: en-US, de-DE, it-IT, etc.")
+        return create_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Invalid language format. Expected format: en-US, de-DE, it-IT, etc.",
+            status="error"
+        )
     
     headers = {
         "accept": "application/json",
-        "Authorization": "Bearer " + settings.tmdb_api_key
+        "Authorization": f"Bearer {settings.tmdb_api_key}"
     }
 
     params = {
@@ -106,36 +141,57 @@ async def get_movie_popularity_id(
     }
 
     try:    
-        movies = make_request(settings.tmdb_url_id + "/{id}", headers, params)
+        movies = make_request(settings.tmdb_url_id + f"/{id}", headers, params)
         
         if 'Error' in movies:
-            response = {
-                "status": "fail",
-                "message": movies['Error']
-            }
-            return JSONResponse(content=response, status_code=404)
-        return JSONResponse(content=movies, status_code=200)
-    
-    except requests.exceptions.HTTPError as e:
-        return handle_error(e, 404, "HTTP error occurred")
+            return create_response(
+                status_code=status.HTTP_404_NOT_FOUND,
+                message="Error retrieving movie details",
+                data={"error": movies['Error']},
+            )
+        return create_response(
+            status_code=status.HTTP_200_OK,
+            message="Movie details retrieved successfully",
+            data=movies
+        )
+    except HTTPException as e:
+        return create_response(
+            status_code=e.status_code,
+            message="HTTP error occurred",
+            data={"error": str(e.detail)},
+        )
     except requests.exceptions.ConnectionError as e:
-        return handle_error(e, 503, "Connection error occurred")
+        return create_response(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message="Connection error occurred",
+            data={"error": str(e)},
+        )
     except requests.exceptions.Timeout as e:
-        return handle_error(e, 504, "Request timed out")
+        return create_response(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            message="Request timed out",
+            data={"error": str(e)},
+        )
     except requests.exceptions.RequestException as e:
-        return handle_error(e, 500, "An error occurred while calling the TMDB API")
-    
+        return create_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="An error occurred while calling the TMDB API",
+            data={"error": str(e)},
+        )
 
 async def discover_movies(
-        language: str = Query(...), 
-        with_genres: str = Query(...), 
-        vote_avg_gt: float = Query(...), 
-        sort_by: str = Query(default="popularity.desc", description="Sort results by this value"),
-        settings: Settings = Depends(get_settings)
-    ):
+    language: str = Query(...), 
+    with_genres: str = Query(...), 
+    vote_avg_gt: float = Query(...), 
+    sort_by: str = Query(default="popularity.desc", description="Sort results by this value"),
+    settings: Settings = Depends(get_settings)
+):
     # Validate language format
     if not is_valid_language(language):
-        return handle_error(None, 400, "Invalid language format. Expected format: en-US, de-DE, it-IT, etc.")
+        return create_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Invalid language format. Expected format: en-US, de-DE, it-IT, etc.",
+        )
     
     headers = {
         "accept": "application/json",
@@ -156,33 +212,48 @@ async def discover_movies(
         movies = make_request(settings.tmdb_discover_movie, headers, params)
         
         if not movies.get("results"):
-            response = {
-                "status": "fail",
-                "message": "No movies found matching the criteria"
+            return create_response(
+                status_code=status.HTTP_404_NOT_FOUND,
+                message="No movies found matching the criteria",
+            )
+
+        return create_response(
+            status_code=status.HTTP_200_OK,
+            message="Movies retrieved successfully",
+            data={
+                "total_results": movies["total_results"],
+                "total_pages": movies["total_pages"],
+                "results": movies["results"]
             }
-            return JSONResponse(content=response, status_code=404)
-
-        return JSONResponse(content={
-            "status": "success",
-            "total_results": movies["total_results"],
-            "total_pages": movies["total_pages"],
-            "results": movies["results"]
-        }, status_code=200)
-    
-    except requests.exceptions.HTTPError as e:
-        return handle_error(e, 404, "HTTP error occurred")
+        )
+    except HTTPException as e:
+        return create_response(
+            status_code=e.status_code,
+            message="HTTP error occurred",
+            data={"error": str(e.detail)},
+        )
     except requests.exceptions.ConnectionError as e:
-        return handle_error(e, 503, "Connection error occurred")
+        return create_response(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message="Connection error occurred",
+            data={"error": str(e)},
+        )
     except requests.exceptions.Timeout as e:
-        return handle_error(e, 504, "Request timed out")
+        return create_response(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            message="Request timed out",
+            data={"error": str(e)},
+        )
     except requests.exceptions.RequestException as e:
-        return handle_error(e, 500, "An error occurred while calling the TMDB API")
-
-
+        return create_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="An error occurred while calling the TMDB API",
+            data={"error": str(e)},
+        )
 
 async def health_check():
-    response = {
-        "status": "success",
-        "message": "TMDB API Adapter is up and running!"
-    }
-    return JSONResponse(content=response, status_code=200)
+    """Health check endpoint."""
+    return create_response(
+        status_code=status.HTTP_200_OK,
+        message="TMDB API Adapter is up and running!"
+    )

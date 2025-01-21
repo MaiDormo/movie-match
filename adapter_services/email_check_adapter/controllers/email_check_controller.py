@@ -22,19 +22,14 @@ def get_settings() -> Settings:
         )
     return settings
 
-def create_response(
-    status_code: int,
-    message: str,
-    data: Dict[str, Any] = None,
-    status_str: str = "success"
-) -> JSONResponse:
-    """Create a standardized JSON response"""
+def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+    """Create a standardized API response"""
     content = {
-        "status": status_str,
+        "status": "success" if status_code < 400 else "error",
         "message": message
     }
     if data:
-        content["data"] = data
+        content.update(data)
     return JSONResponse(content=content, status_code=status_code)
 
 def filter_response(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -106,31 +101,31 @@ async def check_email(
         elif response.status_code == status.HTTP_403_FORBIDDEN:
             error_msg = "Invalid API key"
             
-        raise HTTPException(
+        raise create_response(
             status_code=response.status_code,
-            detail=error_msg
+            message=error_msg
         )
         
     except ConnectionError:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Email validation service is temporarily unavailable"
+            message="Email validation service is temporarily unavailable"
         )
         
     except Timeout:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail="Email validation service request timed out"
+            message="Email validation service request timed out"
         )
         
     except ValueError as json_err:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Invalid JSON response from email validation service: {json_err}"
+            message=f"Invalid JSON response from email validation service: {json_err}"
         )
         
     except RequestException as req_err:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to validate email: {req_err}"
+            message=f"Failed to validate email: {req_err}"
         )

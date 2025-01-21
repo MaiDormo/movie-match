@@ -1,6 +1,7 @@
-from fastapi import Depends, Query
+from fastapi import Depends, Query, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from typing import Dict, Any
 import os
 import requests
 
@@ -12,72 +13,102 @@ class Settings(BaseModel):
 def get_settings():
     return Settings()
 
-def handle_error(e, status_code, message):
-    response = {
-        "status": "error",
-        "code": status_code,
-        "message": message,
-        "error": str(e) if e else None
+def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+    """Create a standardized API response"""
+    content = {
+        "status": "success" if status_code < 400 else "error",
+        "message": message
     }
-    return JSONResponse(content=response, status_code=status_code)
+    if data:
+        content["data"] = data
+    return JSONResponse(content=content, status_code=status_code)
 
 def filter_data(stream_avail_data, country):
-    if stream_avail_data and 'streamingOptions' in stream_avail_data and country in stream_avail_data['streamingOptions']:
-        streaming_options = stream_avail_data['streamingOptions'][country]
-        
-        service_dict = {}  # Dizionario per tenere traccia dei servizi unici
-        
-        for stream_opts in streaming_options:
-            service_name = stream_opts.get("service", {}).get("name", "Unknown")
-            service_type = stream_opts.get("type", "Unknown")
-            link = stream_opts.get("link", "Unknown")
-            logo = stream_opts.get("service", {}).get("imageSet", {}).get("lightThemeImage", None)
-            
-            # Capitalizzare la prima lettera di service_type
-            service_type = service_type.capitalize()
-            
-            # Se il servizio non è ancora stato aggiunto, lo aggiungiamo
-            if service_name not in service_dict:
-                service_dict[service_name] = {
-                    "service_name": service_name,
-                    "links": [link],  # Lista per raccogliere tutti i link
-                    "logos": [logo],  # Lista per raccogliere tutti i loghi
-                    "service_types": [service_type]  # Lista per raccogliere i tipi di servizio
-                }
-            else:
-                # Aggiungiamo il link, logo e service_type a quelli già esistenti
-                existing_service = service_dict[service_name]
-                existing_service["links"].append(link)
-                existing_service["logos"].append(logo)
-                existing_service["service_types"].append(service_type)
-        
-        # Ora aggiorniamo ogni servizio con il tipo finale (ordinato e concatenato)
-        for service_name, service_data in service_dict.items():
-            # Ordinare i tipi di servizio in ordine alfabetico e concatenarli con "/"
-            sorted_service_types = sorted(set(service_data["service_types"]))
-            service_data["service_type"] = "/".join(sorted_service_types)
-            
-            # Mantenere solo il primo link e logo per ogni servizio
-            service_data["link"] = service_data["links"][0]
-            service_data["logo"] = service_data["logos"][0]
-            
-            # Rimuovere le liste di link e loghi poiché non sono più necessarie
-            del service_data["links"]
-            del service_data["logos"]
-        
-        # Creare una lista ordinata per service_name
-        result = sorted(service_dict.values(), key=lambda x: x['service_name'])
-        
-        return result
+    """Filter and extract relevant streaming availability data."""
+    # Check if we have valid streaming options for the country
+    if not stream_avail_data or 'streamingOptions' not in stream_avail_data or not stream_avail_data['streamingOptions']:
+        return []  # Return empty list if no streaming options available
+
+    streaming_options = stream_avail_data['streamingOptions'].get(country, [])
+    if not streaming_options:
+        return []  # Return empty list if no options for this country
+
+    service_dict = {}  # Dictionary to track unique services
     
-    return None
+    for stream_opts in streaming_options:
+        service_name = stream_opts.get("service", {}).get("name", "Unknown")
+        service_type = stream_opts.get("type", "Unknown")
+        link = stream_opts.get("link", "Unknown")
+        logo = stream_opts.get("service", {}).get("imageSet", {}).get("lightThemeImage", None)
+        
+        # Capitalize the first letter of service_type
+        service_type = service_type.capitalize()
+        
+        # If the service hasn't been added yet, add it
+        if service_name not in service_dict:
+            service_dict[service_name] = {
+                "service_name": service_name,
+                "links": [link],
+                "logos": [logo],
+                "service_types": [service_type]
+            }
+        else:
+            # Add the link, logo, and service_type to existing ones
+            existing_service = service_dict[service_name]
+            existing_service["links"].append(link)
+            existing_service["logos"].append(logo)
+            existing_service["service_types"].append(service_type)
 
+    # Update each service with the final type (sorted and concatenated)
+    result = []
+    for service_name, service_data in service_dict.items():
+        sorted_service_types = sorted(set(service_data["service_types"]))
+        result.append({
+            "service_name": service_name,
+            "service_type": "/".join(sorted_service_types),
+            "link": service_data["links"][0],  # Keep only first link
+            "logo": service_data["logos"][0]   # Keep only first logo
+        })
 
+    # Create a sorted list by service_name
+    return sorted(result, key=lambda x: x['service_name'])
 
-def make_stream_request(url, headers, params):
-    response = requests.get(url, headers=headers, params=params)
-    response.raise_for_status()
-    return response.json()
+def make_request(url, headers, params, country):
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        filtered_response = filter_data(response.json(), country)
+        if 'Error' in response:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=response['Error']
+            )
+        return filtered_response
+    except requests.exceptions.HTTPError as e:
+        return create_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="HTTP error occurred",
+            data={"error": str(e)}
+        )
+    except requests.exceptions.ConnectionError as e:
+        return create_response(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message="Connection error occurred",
+            data={"error": str(e)}
+        )
+    except requests.exceptions.Timeout as e:
+        return create_response(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            message="Request timed out",
+            data={"error": str(e)}
+        )
+    except requests.exceptions.RequestException as e:
+        return create_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="An error occurred while calling the Streaming Availability API",
+            data={"error": str(e)}
+        )
+    
 
 async def get_movie_availability(
     imdb_id: str = Query(...),
@@ -85,7 +116,10 @@ async def get_movie_availability(
     settings: Settings = Depends(get_settings)
 ):
     if not imdb_id or not country:
-        return handle_error(None, 400, "IMDB ID and country are required")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="IMDB ID and country are required"
+        )
 
     headers = {
         "x-rapidapi-key": settings.stream_avail_api_key,
@@ -94,26 +128,17 @@ async def get_movie_availability(
     url = f"{settings.stream_avail_url}/{imdb_id}"  # Updated endpoint with imdb_id in the path
     params = {"country": country}  # Only country is needed as a query parameter
 
-    try:
-        stream_avail_data = make_stream_request(url, headers, params)
-        if 'Error' in stream_avail_data:
-            return handle_error(None, 404, stream_avail_data['Error'])
-        result = filter_data(stream_avail_data, country)
-        if result:
-            return JSONResponse(content=result, status_code=200)
-        return handle_error(None, 404, "No streaming options found for the specified country")
-    except requests.exceptions.HTTPError as e:
-        return handle_error(e, 404, "HTTP error occurred")
-    except requests.exceptions.ConnectionError as e:
-        return handle_error(e, 503, "Connection error occurred")
-    except requests.exceptions.Timeout as e:
-        return handle_error(e, 504, "Request timed out")
-    except requests.exceptions.RequestException as e:
-        return handle_error(e, 500, "An error occurred while calling the Streaming Availability API")
+    result = make_request(url, headers, params, country)
+    return create_response(
+        status_code=status.HTTP_200_OK,
+        message="Streaming availability retrieved successfully",
+        data=result
+    )
+    
 
-async def health_check(settings: Settings = Depends(get_settings)):
-    response = {
-        "status": "success",
-        "message": "STREAMING AVAILABILITY API Adapter is up and running! key=" + settings.stream_avail_api_key
-    }
-    return JSONResponse(content=response, status_code=200)
+async def health_check() -> JSONResponse:
+    """Health check endpoint"""
+    return create_response(
+        status_code=status.HTTP_200_OK,
+        message="STREAMING AVAILABILITY API Adapter is up and running!"
+    )

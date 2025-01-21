@@ -1,12 +1,10 @@
-
-import { getUserGenres }  from './genres.js';
+import { getUserGenres } from './genres.js';
 
 function loadMovies(query = '') {
     const movieList = document.getElementById('movie-list');
     const spinner = document.getElementById('loading-spinner');
     const searchInput = document.getElementById('search-input');
 
-    // Se la query è vuota, prendi il valore dell'input
     const searchQuery = query || searchInput.value;
 
     if (!searchQuery) {
@@ -14,20 +12,16 @@ function loadMovies(query = '') {
         return;
     }
 
-    // Svuota la lista prima di aggiungere nuovi film
     movieList.innerHTML = '';
-
-    // Aggiungi lo spinner all'interno di movie-list
     movieList.appendChild(spinner);
-    spinner.style.display = 'block'; // Mostra lo spinner
+    spinner.style.display = 'block';
 
-    // Effettua la richiesta fetch con il parametro della ricerca
     fetch(`http://localhost:5001/api/v1/search_info?title=${encodeURIComponent(searchQuery)}`)
         .then(response => response.json())
         .then(data => {
-            spinner.style.display = 'none'; // Nascondi lo spinner
-            if (data && data.length > 0) {
-                data.forEach(movie => {
+            spinner.style.display = 'none';
+            if (data.status === "success" && Array.isArray(data.data)) {
+                data.data.forEach(movie => {
                     const movieItem = document.createElement('div');
                     movieItem.classList.add('movie-item');
 
@@ -36,15 +30,16 @@ function loadMovies(query = '') {
                         <div class="movie-info">
                             <div class="title">${movie.Title} (${movie.Year})</div>
                             <div class="details">
-                                <div><strong>Genre:</strong> ${movie.Genre}</div>
-                                <div><strong>Rating:</strong> ${movie.imdbRating}</div>
+                                <div><strong>Genre:</strong> ${movie.Genre || 'N/A'}</div>
+                                <div><strong>Rating:</strong> ${movie.imdbRating || 'N/A'}</div>
+                                <div><strong>Type:</strong> ${movie.Type || 'N/A'}</div>
+                                <div><strong>IMDb:</strong> ${movie.imdbID || 'N/A'}</div>
                             </div>
                         </div>
                     `;
 
                     movieItem.onclick = () => {
-                        // Ricarica la pagina quando clicchi su un film
-                        window.location.reload();
+                        console.log(`Selected movie: ${movie.imdbID}`);
                     };
 
                     movieList.appendChild(movieItem);
@@ -54,8 +49,9 @@ function loadMovies(query = '') {
             }
         })
         .catch(error => {
-            spinner.style.display = 'none'; // Nascondi lo spinner in caso di errore
+            spinner.style.display = 'none';
             console.error('Error loading movies:', error);
+            movieList.innerHTML = 'Error loading movies. Please try again.';
         });
 }
 
@@ -110,7 +106,6 @@ async function createGenres(userId) {
     }
 }
 
-
 async function updateUserPreferences(userId, preferences) {
     try {
         const response = await fetch(`http://localhost:5010/api/v1/user?id=${userId}`, {
@@ -135,10 +130,15 @@ async function updateUserPreferences(userId, preferences) {
     }
 }
 
+// Initialize everything when the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Add click event listener to search button
+    const searchButton = document.getElementById('search-button');
+    if (searchButton) {
+        searchButton.addEventListener('click', () => loadMovies());
+    }
 
-// Carica "Avengers" all'inizio
-
-window.onload = () => {
+    // Load initial movies and genres
     loadMovies('Avengers');
     createGenres("0b8ac00c-a52b-4649-bd75-699b49c00ce3");
-};
+});

@@ -174,27 +174,43 @@ async function fetchStreamingAvailability(movieId) {
     try {
         const url = `http://localhost:5002/api/v1/avail?imdb_id=${movieId}&country=it`;
         const response = await fetch(url);
-        const data = await response.json();
+        const responseData = await response.json();
 
-        // Costruisci una stringa con i dati ricevuti, mostrando solo il logo e un bottone per il service_type
-        const availabilityList = data.map(item => {
+        // Check if response is successful and has data
+        if (responseData.status !== "success" || !responseData.data) {
+            throw new Error(responseData.message || "No streaming data available");
+        }
+
+        // Convert data to array if it's not already
+        const servicesArray = Array.isArray(responseData.data) ? 
+            responseData.data : 
+            [responseData.data];
+        
+        // Map through the services array
+        const availabilityList = servicesArray.length > 0 ? servicesArray.map(item => {
             return `
-        <div style="display: flex; align-items: center; margin-bottom: 10px;">
-            <img src="${item.logo}" alt="${item.service_name}" style="width: 100px; height: 100px; margin-right: 30px; margin-left: 20px;">
-            <a href="${item.link}" target="_blank" style="text-decoration: none;">
-                <div style="background-color: orange; color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer;">
-                    ${item.service_type}
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <img src="${item.logo || ''}" alt="${item.service_name}" style="width: 100px; height: 100px; margin-right: 30px; margin-left: 20px;">
+                    <a href="${item.link}" target="_blank" style="text-decoration: none;">
+                        <div style="background-color: orange; color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer;">
+                            ${item.service_type}
+                        </div>
+                    </a>
                 </div>
-            </a>
-        </div>
-    `;
-        }).join(''); // Unisce i risultati senza salto di riga
+            `;
+        }).join('') : '';
 
-        // Aggiungi i risultati alla pagina
+        // Show no results message if list is empty
+        if (!availabilityList) {
+            document.getElementById('streaming-description').textContent = "No streaming services available.";
+            return;
+        }
+
         document.getElementById('streaming-description').innerHTML = availabilityList;
     } catch (error) {
-        console.error("Errore durante il recupero della disponibilità in streaming:", error);
-        document.getElementById('streaming-description').textContent = "Impossibile recuperare i dati.";
+        console.error("Error fetching streaming availability:", error);
+        document.getElementById('streaming-description').textContent = 
+            "Unable to retrieve streaming availability data.";
     }
 }
 

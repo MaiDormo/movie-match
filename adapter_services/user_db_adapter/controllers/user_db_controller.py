@@ -1,5 +1,5 @@
 import os
-from fastapi import Body, Request, Response, HTTPException, status, Query, Depends
+from fastapi import Body, Request, status, Query, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Any
@@ -27,10 +27,10 @@ def get_user_collection(request: Request, settings: Settings = Depends(get_setti
     mongo_client = request.app.state.db
     return mongo_client[settings.db_name][settings.db_collection]
 
-def create_response(status_code: int, message: str, data: dict = None) -> JSONResponse:
-    """Create a standardized success response."""
+def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+    """Create a standardized API response"""
     content = {
-        "status": "success",
+        "status": "success" if status_code < 400 else "error",
         "message": message
     }
     if data:
@@ -55,17 +55,17 @@ async def create_user(
         
         # Check for existing email
         if users_collection.find_one({"email": user_dict["email"]}):
-            raise HTTPException(
+            return create_response(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
+                message="Email already registered"
             )
         
         # Insert new user
         result = users_collection.insert_one(user_dict)
         if not result.inserted_id:
-            raise HTTPException(
+            return create_response(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create user"
+                message="Failed to create user"
             )
         
         created_user = users_collection.find_one({"_id": result.inserted_id})
@@ -76,14 +76,14 @@ async def create_user(
         )
         
     except DuplicateKeyError:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A user with this ID already exists"
+            message="A user with this ID already exists"
         )
     except Exception as e:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            message=str(e)
         )
 
 async def list_users(
@@ -107,9 +107,9 @@ async def list_users(
             }
         )
     except Exception as e:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve users: {str(e)}"
+            message=f"Failed to retrieve users: {str(e)}"
         )
 
 async def find_user(
@@ -119,9 +119,9 @@ async def find_user(
     """Find a user by ID."""
     user = users_collection.find_one({"_id": id})
     if not user:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with ID {id} not found"
+            message=f"User with ID {id} not found"
         )
     
     return create_response(
@@ -137,9 +137,9 @@ async def find_user_by_email(
     """Find a user by email."""
     user = users_collection.find_one({"email": email})
     if not user:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with email {email} not found"
+            message=f"User with email {email} not found"
         )
     
     return create_response(
@@ -169,9 +169,9 @@ async def update_user(
         )
         
         if result.matched_count == 0:
-            raise HTTPException(
+            return create_response(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {id} not found"
+                message=f"User with ID {id} not found"
             )
 
         updated_user = users_collection.find_one({"_id": id})
@@ -181,9 +181,9 @@ async def update_user(
             data=updated_user
         )
     except Exception as e:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
+            message=str(e)
         )
 
 async def delete_user(
@@ -194,9 +194,9 @@ async def delete_user(
     result = users_collection.delete_one({"_id": id})
     
     if result.deleted_count == 0:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with ID {id} not found"
+            message=f"User with ID {id} not found"
         )
     
     return create_response(

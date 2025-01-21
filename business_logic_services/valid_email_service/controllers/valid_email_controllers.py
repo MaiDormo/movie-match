@@ -1,25 +1,20 @@
 from typing import Dict, Any, Tuple
 import requests
-from fastapi import Query, HTTPException, status
+from fastapi import Query, status
 from fastapi.responses import JSONResponse
 
 # Constants
 EMAIL_CHECK_ADAPTER_URL = "http://email-check-adapter:5000/api/v1/email"
 REQUEST_TIMEOUT = 10  # seconds
 
-def create_response(
-    status_code: int, 
-    message: str, 
-    data: Dict[str, Any] = None, 
-    status: str = "success"
-) -> JSONResponse:
-    """Create a standardized JSON response."""
+def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+    """Create a standardized API response"""
     content = {
-        "status": status,
+        "status": "success" if status_code < 400 else "error",
         "message": message
     }
     if data:
-        content["data"] = data
+        content.update(data)
     return JSONResponse(content=content, status_code=status_code)
 
 def parse_email_check_response(data: Dict[str, Any]) -> Tuple[bool, Dict[str, Any]]:
@@ -71,7 +66,7 @@ async def validate_email(
         JSONResponse with validation results
         
     Raises:
-        HTTPException: For various error conditions
+        create_response: For various error conditions
     """
     params = {"email": email}
     
@@ -91,7 +86,7 @@ async def validate_email(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 status="fail",
                 message=adapter_response.get("message", "Email validation failed"),
-                data={"email": adapter_response.get("detail", "Unknown error occurred")}
+                data={"email": adapter_response.get("message", "Unknown error occurred")}
             )
 
         # Parse and validate the response
@@ -112,27 +107,27 @@ async def validate_email(
         )
 
     except requests.exceptions.HTTPError as http_err:
-        raise HTTPException(
+        raise create_response(
             status_code=response.status_code,
-            detail=f"Email validation service error: {http_err}"
+            message=f"Email validation service error: {http_err}"
         )
     except requests.exceptions.ConnectionError:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Email validation service is temporarily unavailable"
+            message="Email validation service is temporarily unavailable"
         )
     except requests.exceptions.Timeout:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail="Email validation request timed out"
+            message="Email validation request timed out"
         )
     except requests.exceptions.RequestException as req_err:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error occurred during email validation: {req_err}"
+            message=f"Error occurred during email validation: {req_err}"
         )
     except ValueError as json_err:
-        raise HTTPException(
+        raise create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Invalid response format from email validation service: {json_err}"
+            message=f"Invalid response format from email validation service: {json_err}"
         )
