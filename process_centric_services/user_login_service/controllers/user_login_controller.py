@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Depends, status
+from fastapi import Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from passlib.context import CryptContext
@@ -41,17 +41,17 @@ def verify_token(token: str, settings: Settings = Depends(get_settings)) -> str:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         if email := payload.get("sub"):
             return email
-        raise create_response(
+        return create_response(
             status_code=status.HTTP_401_UNAUTHORIZED, 
             message="Invalid token: missing subject claim"
         )
     except jwt.ExpiredSignatureError:
-        raise create_response(
+        return create_response(
             status_code=status.HTTP_401_UNAUTHORIZED,
             message="Token has expired"
         )
     except jwt.InvalidTokenError:
-        raise create_response(
+        return create_response(
             status_code=status.HTTP_401_UNAUTHORIZED,
             message="Invalid token format"
         )
@@ -68,7 +68,7 @@ def create_access_token(
     try:
         return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     except Exception as e:
-        raise create_response(
+        return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message=f"Error creating access token: {str(e)}"
         )
@@ -85,21 +85,21 @@ async def validate_credentials(email: str, password: str) -> Dict[str, Any]:
         return response.json()
     except requests.exceptions.HTTPError as http_err:
         if response.status_code == status.HTTP_404_NOT_FOUND:
-            raise create_response(
+            return create_response(
                 status_code=status.HTTP_404_NOT_FOUND,
                 message="Email not found. Please check your email and try again."
             )
-        raise create_response(
+        return create_response(
             status_code=response.status_code,
             message=f"Error validating credentials: {str(http_err)}"
         )
     except requests.exceptions.Timeout:
-        raise create_response(
+        return create_response(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             message="Database service timeout"
         )
     except requests.exceptions.RequestException as req_err:
-        raise create_response(
+        return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message=f"Database service error: {str(req_err)}"
         )
@@ -114,18 +114,20 @@ async def login(
         return create_response(
             status_code=status.HTTP_400_BAD_REQUEST,
             message="Email and password are required",
-            status="fail"
         )
 
     # Validate credentials
     user_data = await validate_credentials(form_data.username, form_data.password)
+
+    # Check if validation failed
+    if isinstance(user_data, JSONResponse):
+        return user_data
 
     # Verify password
     if not PWD_CONTEXT.verify(form_data.password, user_data["data"]["password"]):
         return create_response(
             status_code=status.HTTP_400_BAD_REQUEST,
             message="Invalid password",
-            status="fail"
         )
 
     # Create access token
@@ -167,9 +169,9 @@ async def refresh_token(
             ).model_dump()
         )
     except create_response:
-        raise
+        return
     except Exception as e:
-        raise create_response(
+        return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message=f"Error refreshing token: {str(e)}"
         )

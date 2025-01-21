@@ -60,7 +60,7 @@ async function handleLogin(event) {
             localStorage.setItem('token', data.data.access_token);
             window.location.href = '/';
         } else {
-            if (data.status === 'fail') {
+            if (data.status === 'error') {
                 if (data.data) {
                     Object.keys(data.data).forEach(field => {
                         showFieldError(field, data.data[field]);
