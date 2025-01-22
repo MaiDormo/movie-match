@@ -6,8 +6,6 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import httpx
 
-router = APIRouter()
-
 class Settings(BaseModel):
     """Configuration settings for external service endpoints."""
     omdb_url: str = "http://omdb-adapter:5000/api/v1/find"
