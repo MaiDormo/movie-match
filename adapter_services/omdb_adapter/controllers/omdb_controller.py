@@ -32,24 +32,24 @@ def handle_api_errors(func):
         try:
             return await func(*args, **kwargs)
         except requests.exceptions.HTTPError as e:
-            raise HTTPException(
+            return create_response(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"HTTP error occurred: {str(e)}"
+                message=f"HTTP error occurred: {str(e)}"
             )
         except requests.exceptions.ConnectionError:
-            raise HTTPException(
+            return create_response(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="OMDB API is currently unavailable"
+                message="OMDB API is currently unavailable"
             )
         except requests.exceptions.Timeout:
-            raise HTTPException(
+            return create_response(
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-                detail="Request to OMDB API timed out"
+                message="Request to OMDB API timed out"
             )
         except requests.exceptions.RequestException as e:
-            raise HTTPException(
+            return create_response(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error calling OMDB API: {str(e)}"
+                message=f"Error calling OMDB API: {str(e)}"
             )
     return wrapper
 
@@ -60,9 +60,9 @@ def make_request(url: str, params: Dict[str, str]) -> Dict[str, Any]:
     data = response.json()
     
     if 'Error' in data:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=data['Error']
+            message=data['Error']
         )
     return data
 
@@ -112,6 +112,10 @@ async def get_movies_with_info(
     
     # Get initial movie list
     movies = make_request(settings.omdb_url, params)
+    
+    if isinstance(movies, JSONResponse):
+        return movies
+
     films_list = movies.get("Search", [])
     
     # Get detailed information for each movie
