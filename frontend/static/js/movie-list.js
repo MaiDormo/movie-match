@@ -1,6 +1,4 @@
-import { getUserGenres } from './genres.js';
-
-function loadMovies(query = '') {
+async function loadMovies(query = '') {
     const movieList = document.getElementById('movie-list');
     const spinner = document.getElementById('loading-spinner');
     const searchInput = document.getElementById('search-input');
@@ -18,46 +16,54 @@ function loadMovies(query = '') {
     spinner.style.display = 'block';
     searchButton.disabled = true; // Disable the search button to prevent multiple clicks
 
-    fetch(`http://localhost:5001/api/v1/search_info?title=${encodeURIComponent(searchQuery)}`)
-        .then(response => response.json())
-        .then(data => {
-            spinner.style.display = 'none';
-            searchButton.disabled = false; // Re-enable the search button
+    try {
+        const response = await fetch(`http://localhost:5016/api/v1/movie_search_text?query=${encodeURIComponent(searchQuery)}`)
+        const data_json = await response.json();
 
-            if (data.status === "success" && Array.isArray(data.data)) {
-                data.data.forEach(movie => {
-                    const movieItem = document.createElement('div');
-                    movieItem.classList.add('movie-item');
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to fetch user movie');
+        }
 
-                    movieItem.innerHTML = `
-                        <img src="${movie.Poster !== "N/A" ? movie.Poster : 'https://via.placeholder.com/50x75'}" alt="${movie.Title}">
-                        <div class="movie-info">
-                            <div class="title">${movie.Title} (${movie.Year})</div>
-                            <div class="details">
-                                <div><strong>Genre:</strong> ${movie.Genre || 'N/A'}</div>
-                                <div><strong>Rating:</strong> ${movie.imdbRating || 'N/A'}</div>
-                                <div><strong>Type:</strong> ${movie.Type || 'N/A'}</div>
-                                <div><strong>IMDb:</strong> ${movie.imdbID || 'N/A'}</div>
-                            </div>
-                        </div>
-                    `;
+        if (data_json.status === 'fail') {
+            throw new Error(data.message || 'Movies not found');
+        }
+        const data = data_json.data.movie_list;
 
-                    movieItem.onclick = () => {
-                        window.location.href = `/movie?id=${movie.imdbID}`;
-                    };
+        spinner.style.display = 'none';
+        searchButton.disabled = false; // Re-enable the search button
 
-                    movieList.appendChild(movieItem);
-                });
-            } else {
-                movieList.innerHTML = 'No movies found.';
-            }
-        })
-        .catch(error => {
-            spinner.style.display = 'none';
-            searchButton.disabled = false; // Re-enable the search button
-            console.error('Error loading movies:', error);
-            movieList.innerHTML = 'Error loading movies. Please try again.';
+
+        data.forEach(movie => {
+            const movieItem = document.createElement('div');
+            movieItem.classList.add('movie-item');
+
+            movieItem.innerHTML = `
+                <img src="${movie.Poster !== "N/A" ? movie.Poster : 'https://via.placeholder.com/50x75'}" alt="${movie.Title}">
+                <div class="movie-info">
+                    <div class="title">${movie.Title} (${movie.Year})</div>
+                    <div class="details">
+                        <div><strong>Genre:</strong> ${movie.Genre || 'N/A'}</div>
+                        <div><strong>Rating:</strong> ${movie.imdbRating || 'N/A'}</div>
+                        <div><strong>Type:</strong> ${movie.Type || 'N/A'}</div>
+                        <div><strong>IMDb:</strong> ${movie.imdbID || 'N/A'}</div>
+                    </div>
+                </div>
+            `;
+
+            movieItem.onclick = () => {
+                window.location.href = `/movie?id=${movie.imdbID}`;
+            };
+
+            movieList.appendChild(movieItem);
         });
+
+
+    } catch (error) {
+        spinner.style.display = 'none';
+        searchButton.disabled = false; // Re-enable the search button
+        console.error('Error loading movies:', error);
+        movieList.innerHTML = 'Error loading movies. Please try again.';
+    };
 }
 
 async function getMovieImdbId(tmdbId, defaultImdbId = 'tt0111161') { // Default to "The Shawshank Redemption"
@@ -119,8 +125,8 @@ async function discoverMoviesByGenre() {
                 const movieItem = document.createElement('div');
                 movieItem.classList.add('movie-item');
 
-                const posterUrl = movie.poster_path 
-                    ? `https://image.tmdb.org/t/p/original${movie.poster_path}` 
+                const posterUrl = movie.poster_path
+                    ? `https://image.tmdb.org/t/p/original${movie.poster_path}`
                     : 'https://via.placeholder.com/50x75';
 
                 const genreNames = (movie.genre_ids || [])
@@ -144,8 +150,8 @@ async function discoverMoviesByGenre() {
 
                 // Add click event handler with error handling
                 movieItem.addEventListener('click', async () => {
-                        await getMovieImdbId(movie.id)
-                    });
+                    await getMovieImdbId(movie.id)
+                });
 
                 movieList.appendChild(movieItem);
             });
@@ -164,7 +170,21 @@ async function createGenres(userId) {
     const genreTagsContainer = document.getElementById('genre-tags');
 
     try {
-        const userGenres = await getUserGenres(userId);
+
+        const response = await fetch(`http://localhost:5016/api/v1/user_genres?user_id=${userId}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to fetch user genres');
+        }
+
+        if (data.status === 'fail') {
+            throw new Error(data.message || 'Genres not found');
+        }
+
+        // Estrarre i generi dall'oggetto JSON
+        const userGenres = data.data.user_genres;
+
         genreTagsContainer.innerHTML = '';
 
         userGenres.forEach(genre => {

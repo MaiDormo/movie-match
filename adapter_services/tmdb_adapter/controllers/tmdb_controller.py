@@ -110,6 +110,49 @@ async def get_movie_tmdb_id(
             status_code=e.status_code,
             message=str(e.detail)
         )
+    
+async def get_movie(
+    id: int = Query(...), 
+    language: str = Query(...), 
+    settings: Settings = Depends(get_settings)
+):
+    if not id or not language:
+        return create_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Title and language are required"
+        )
+    
+    if not is_valid_language(language):
+        raise create_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid language format. Expected format: en-US, de-DE, it-IT, etc."
+        )
+
+    headers = {
+        "accept": "application/json",
+        "Authorization": f"Bearer {settings.tmdb_api_key}"
+    }
+    params = {
+        "language": language,
+    }
+
+    try:
+        response = make_request(settings.tmdb_url + f"{id}", headers, params)
+        
+        if isinstance(response,JSONResponse):
+            return response
+
+        return create_response(
+            status_code=status.HTTP_200_OK,
+            message="IMDB ID retrieved successfully",
+            data= {"movie_list": response}
+        )
+    
+    except HTTPException as e:
+        return create_response(
+            status_code=e.status_code,
+            message=str(e.detail)
+        )
 
 async def discover_movies(
     language: str = Query(...), 
