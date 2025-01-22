@@ -2,7 +2,7 @@ body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-    background-color: #ff4a4a;
+    background-color: #453636;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -18,7 +18,7 @@ body {
 
 .left-box {
     flex: 2;
-    background-color: #ffffff;
+    background-color: #F6F7EB;
     border-radius: 15px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     padding: 50px;
@@ -29,7 +29,7 @@ body {
 .right-box {
     padding: 20px;
     flex: 1;
-    background-color: #ffffff;
+    background-color: #F6F7EB;
     border-radius: 15px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
@@ -59,13 +59,13 @@ body {
 
 
 .search-input:focus {
-    border-color: #FF5757;
-    box-shadow: 0 0 5px rgba(255, 87, 87, 0.5);
+    border-color: #7e4d4f;
+    box-shadow: 0 0 5px rgba(152, 112, 112, 0.5);
 }
 
 .search-button {
     padding: 10px 60px;
-    background: #FF5757;
+    background: #7e4d4f;
     color: white;
     font-size: 16px;
     font-weight: bold;
@@ -76,7 +76,7 @@ body {
 }
 
 .search-button:hover {
-    background: #e04e4e;
+    background: #453636;
 }
 
 .movie-list {
@@ -110,7 +110,7 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     border: 5px solid #f3f3f3;
-    border-top: 5px solid #FF5757;
+    border-top: 5px solid #7e4d4f;
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -129,10 +129,11 @@ body {
 }
 
 .movie-item {
-    background-color: #a4e1a4; /* Sfondo verde chiaro */
+    background-color: #efefe8; /* Sfondo verde chiaro */
     padding: 25px;
     margin-bottom: 15px;
     border-radius: 10px;
+    border: 1px solid #ddd;
     font-size: 16px;
     display: flex;
     align-items: center;
@@ -145,7 +146,7 @@ body {
 }
 
 .movie-item:hover {
-    background-color: #8bcf8b; /* Cambia colore al passaggio del mouse */
+    background-color: #d4d0cc; /* Cambia colore al passaggio del mouse */
     transform: scale(1.03); /* Effetto ingrandimento */
 }
 
@@ -167,12 +168,12 @@ body {
 
 .movie-item .details {
     font-size: 14px;
-    color: #666;
+    color: #313131;
 }
 
 .genres-box {
     padding: 20px;
-    background-color: #f9f9f9;
+    background-color: #efefe8;
     border-radius: 10px;
     border: 1px solid #ddd;
 }
@@ -201,19 +202,19 @@ body {
 }
 
 .genre-tag.selected {
-    background-color: #FF5757;
+    background-color: #865253;
     color: white;
-    border-color: #FF5757;
+    border-color: #544040;
 }
 
 .genre-tag:hover {
-    background-color: #ff7070;
+    background-color: #966e6f;
     color: white;
 }
 
 .confirm-button {
     padding: 10px 40px;
-    background-color: #FF5757;
+    background-color: #7e4d4f;
     color: white;
     border: none;
     border-radius: 5px;
@@ -226,7 +227,7 @@ body {
 
 
 .confirm-button:hover {
-    background-color: #e04e4e;
+    background-color: #453636;
 }
 
 
@@ -238,26 +239,39 @@ body {
 }
 
 .dropdown-button {
-    background-color: #f8d7da;
-    color: #800000;
-    border: 1px solid #f5c6cb;
-    border-radius: 20px;
-    padding: 16px 24px;
+    background-color: #886a6b;
+    color: white;
+    border: 1px solid #815a5c;
+    border-radius: 15px;
+    padding: 10px 24px; /* Spazio interno del testo */
+    padding-right: 40px; /* Spazio riservato per il triangolo */
     cursor: pointer;
-    text-align: center;
+    text-align: left; /* Allinea il testo a sinistra */
     outline: none;
-    width: 180px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    width: 200px;
+    position: relative; /* Per posizionare il triangolino assolutamente */
     font-size: 16px;
     font-weight: bold;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s ease;
 }
 
+.dropdown-button::after {
+    content: '';
+    position: absolute;
+    top: 50%; /* Centra verticalmente il triangolo */
+    right: 16px; /* Spazio fisso dal bordo destro */
+    transform: translateY(-50%); /* Centra esattamente */
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid white; /* Colore del triangolo */
+}
+
+
 .dropdown-button:hover {
-    background-color: #f5c6cb;
+    background-color: #988a8a;
 }
 
 .hidden {

@@ -6,7 +6,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, #ff6a5f, #ff4a3f);
+    background: linear-gradient(135deg, #6e6767, #453636);
 }
 
 .register-container {
@@ -47,7 +47,7 @@ input {
 button {
     width: 100%;
     padding: 12px;
-    background: #ff4a3f;
+    background: #7e4d4f;
     color: white;
     border: none;
     border-radius: 4px;
@@ -57,7 +57,7 @@ button {
 }
 
 button:hover {
-    background: #ff2a1f;
+    background: #583738;
 }
 
 .error-text {
@@ -86,7 +86,7 @@ button:hover {
 }
 
 .login-link a {
-    color: #ff4a3f;
+    color: #7e3235;
     text-decoration: none;
 }
 

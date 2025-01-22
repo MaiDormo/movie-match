@@ -13,11 +13,10 @@
     <div class="container">
         <!-- Movie Details -->
         <div class="movie-details">
-            <h1>Movie Details</h1>
             <div class="details">
-                <h2 id="title">Loading...</h2>
-                <p id="year">Loading...</p>
-                <p id="director">Loading...</p>
+                <h1 id="title">Loading...</h1>
+                <h2 id="year">Loading...</h2>
+                <h2 id="director">Loading...</h2>
             </div>
             <img id="poster" class="poster" src="/static/images/loading.gif" alt="Loading...">
             <div class="video-container">
@@ -34,9 +33,9 @@
                 <h1>Trivia</h1>
                 <p id="question">Caricamento domanda...</p>
                 <div id="options">
-                    <button onclick="checkAnswer(1)">1</button>
-                    <button onclick="checkAnswer(2)">2</button>
-                    <button onclick="checkAnswer(3)">3</button>
+                    <button class="trivia-button" onclick="checkAnswer(1)">1</button>
+                    <button class="trivia-button" onclick="checkAnswer(2)">2</button>
+                    <button class="trivia-button" onclick="checkAnswer(3)">3</button>
                 </div>
                 <p id="feedback" style="font-weight: bold; margin-top: 10px;"></p>
             </div>
@@ -56,7 +55,7 @@
             <!-- Streaming Availability -->
             <div class="trivia">
                 <h1>Streaming Availability</h1>
-                <p id="streaming-description">Frase di prova</p>
+                <p id="streaming-description">Loading...</p>
             </div>
         </div>
     </div>
