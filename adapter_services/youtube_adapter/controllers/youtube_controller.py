@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from fastapi import Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -9,16 +10,19 @@ class Settings(BaseModel):
     youtube_api_key: str = os.getenv("YOUTUBE_API_KEY")
 
 def get_settings():
+    """Dependency injection for YouTube configuration"""
     return Settings()
 
-def handle_error(e, status_code, message):
-    response = {
-        "status": "error",
-        "code": status_code,
-        "message": message,
-        "error": str(e)
+
+def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+    """Create a standardized API response"""
+    content = {
+        "status": "success" if status_code < 400 else "error",
+        "message": message
     }
-    return JSONResponse(content=response, status_code=status_code)
+    if data:
+        content["data"] = data
+    return JSONResponse(content=content, status_code=status_code)
 
 def make_request(url, params):
     response = requests.get(url, params=params)
@@ -26,14 +30,14 @@ def make_request(url, params):
     return response.json()
 
 
-async def health_check(settings: Settings = Depends(get_settings)):
-    response = {
-        "status": "success",
-        "message": "YOUTUBE API Adapter is up and running!"
-    }
-    return JSONResponse(content=response, status_code=200)
+async def health_check(settings: Settings = Depends(get_settings)) -> JSONResponse:
+    """Health check endpoint"""
+    return create_response(
+        status_code=200,
+        message="YOUTUBE API Adapter is up and running!"
+    )
 
-async def search_youtube(query: str = Query(...), settings: Settings = Depends(get_settings)):
+async def search_youtube(query: str = Query(...), settings: Settings = Depends(get_settings)) -> JSONResponse:
     """
     Cerca un video su YouTube utilizzando una stringa di query e restituisce l'ID del video o l'URL embed.
     """
@@ -52,23 +56,41 @@ async def search_youtube(query: str = Query(...), settings: Settings = Depends(g
 
         # Controlla se ci sono risultati
         if "items" not in result or len(result["items"]) == 0:
-            response = {
-                "status": "fail",
-                "message": "Nessun video trovato per la query fornita."
-            }
-            return JSONResponse(content=response, status_code=404)
+            return create_response(
+                status_code=404,
+                message="Nessun video trovato per la query fornita"
+            )
 
         # Estrai l'ID video e costruisci l'URL embed
         video_id = result["items"][0]["id"]["videoId"]
         video_url = f"https://www.youtube.com/embed/{video_id}"
-        return JSONResponse(content={"video_id": video_id, "embed_url": video_url}, status_code=200)
+        return create_response(
+            status_code=200,
+            message="Youtube video successfully retrived!",
+            data={
+                "video_id": video_id,
+                "embed_url": video_url
+            }
+        )
 
     except requests.exceptions.HTTPError as e:
-        return handle_error(e, 404, "Errore HTTP durante la chiamata all'API di YouTube")
+        return create_response(
+            status_code=404,
+            message="Errore HTTP durante la chiamata all'API di YouTube",
+            data = str(e))
     except requests.exceptions.ConnectionError as e:
-        return handle_error(e, 503, "Errore di connessione durante la chiamata all'API di YouTube")
+        return create_response(
+                status_code=503,
+                message="Errore di connessione durante la chiamata all'API di YouTube",
+                data = str(e))
     except requests.exceptions.Timeout as e:
-        return handle_error(e, 504, "Timeout durante la chiamata all'API di YouTube")
+        return create_response(
+            status_code=504,
+            message="Timeout durante la chiamata all'API di YouTube",
+            data = str(e))
     except requests.exceptions.RequestException as e:
-        return handle_error(e, 500, "Errore generico durante la chiamata all'API di YouTube")
+        return create_response(
+            status_code=500,
+            message="Errore generico durante la chiamata all'API di YouTube",
+            data = str(e))
 

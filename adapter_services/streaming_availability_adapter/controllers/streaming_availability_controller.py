@@ -129,6 +129,13 @@ async def get_movie_availability(
     params = {"country": country}  # Only country is needed as a query parameter
 
     result = make_request(url, headers, params, country)
+
+    if not result:
+        return create_response(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Streaming availability not found for this movie"
+        )
+
     return create_response(
         status_code=status.HTTP_200_OK,
         message="Streaming availability retrieved successfully",

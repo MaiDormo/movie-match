@@ -3,13 +3,14 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import os
 import requests
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any
 from functools import wraps
 
 class Settings(BaseModel):
     """Configuration settings for OMDB adapter"""
     omdb_url: str = Field(default="http://www.omdbapi.com/", description="OMDB API base URL")
     omdb_api_key: str = Field(default=os.getenv("OMDB_API_KEY"), description="OMDB API key from environment")
+
 def get_settings() -> Settings:
     """Get application settings"""
     return Settings()

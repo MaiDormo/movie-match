@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function fetchMovieDetails(movieId) {
     try {
-        const response = await fetch(`http://localhost:5001/api/v1/find?id=${movieId}`);
+        const response = await fetch(`http://localhost:5005/api/v1/movie_details?movie_id=${movieId}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -24,28 +24,19 @@ async function fetchMovieDetails(movieId) {
         }
 
         // Update movie details
-        updateMovieInfo(data);
+        updateMovieInfo(data.data.movie_details.omdb);
 
-        // Fetch additional content only if main content loaded successfully
-        try {
-            await Promise.all([
-                data.Title && fetchYouTubeTrailer(data.Title),
-                data.Title && fetchSpotifyPlaylist(data.Title),
-                movieId && fetchStreamingAvailability(movieId),
-                data.Title && fetchTrivia(data.Title)
-            ].filter(Boolean));
-        } catch (contentError) {
-            console.error('Error loading additional content:', contentError);
-            // Don't throw - allow partial content loading
-        }
+        // Update additional content
+        updateYouTubeTrailer(data.data.movie_details.youtube);
+        updateSpotifyPlaylist(data.data.movie_details.spotify);
+        updateStreamingAvailability(data.data.movie_details.streaming);
+        updateTrivia(data.data.movie_details.trivia);
 
     } catch (error) {
         console.error('Error fetching movie details:', error);
         showError(`Failed to load movie details: ${error.message}`);
     }
 }
-
-
 
 function updateMovieInfo(movie) {
     const elements = {
@@ -76,6 +67,55 @@ function updateMovieInfo(movie) {
     } catch (error) {
         console.warn('Failed to update background:', error);
     }
+}
+
+function updateYouTubeTrailer(youtubeData) {
+    const iframe = document.querySelector(".video-container iframe");
+    iframe.src = youtubeData.data.embed_url;
+}
+
+function updateSpotifyPlaylist(spotifyData) {
+    const spotifyContainer = document.getElementById("spotify-container");
+    document.getElementById("spotify-cover").src = spotifyData.cover_url;
+    document.getElementById("playlist-title").textContent = spotifyData.name;
+    spotifyContainer.dataset.link = spotifyData.spotify_url;
+}
+
+function updateStreamingAvailability(streamingData) {
+    const streamingDescription = document.getElementById('streaming-description');
+    
+    // Handle null/undefined streaming data
+    if (!streamingData || !streamingData.data || streamingData.data.length === 0) {
+        streamingDescription.innerHTML = `
+            <div class="no-streaming-message" style="text-align: center; padding: 20px;">
+                <p>No streaming services available for this movie</p>
+            </div>
+        `;
+        return;
+    }
+
+    // If we have data, display the streaming services
+    const availabilityList = streamingData.data.map(item => {
+        return `
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <img src="${item.logo || ''}" alt="${item.service_name}" style="width: 100px; height: 100px; margin-right: 30px; margin-left: 20px;">
+                <a href="${item.link}" target="_blank" style="text-decoration: none;">
+                    <button class="streaming-button">
+                        ${item.service_type}
+                    </button>
+                </a>
+            </div>
+        `;
+    }).join('');
+
+    streamingDescription.innerHTML = availabilityList;
+}
+
+function updateTrivia(triviaData) {
+    const questionElement = document.getElementById("question");
+    const formattedQuestion = triviaData.ai_question.replace(/\n/g, "<br>");
+    questionElement.innerHTML = formattedQuestion;
+    window.correctAnswer = triviaData.ai_answer;
 }
 
 function showError(message) {
@@ -114,41 +154,6 @@ function updateBackground(posterUrl) {
     };
 }
 
-async function fetchTrivia(movieTitle) {
-    const questionElement = document.getElementById("question");
-    if (!questionElement) {
-        console.warn('Trivia section not found');
-        return;
-    }
-
-    try {
-        const url = `http://localhost:5007/api/v1/get_trivia?movie_title=${encodeURIComponent(movieTitle)}`;
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to fetch trivia');
-        }
-
-        if (data.status === "success") {
-            const formattedQuestion = data.ai_question.replace(/\n/g, "<br>");
-            questionElement.innerHTML = formattedQuestion;
-            window.correctAnswer = data.ai_answer;
-        } else {
-            throw new Error(data.message || 'No trivia found');
-        }
-
-    } catch (error) {
-        console.error("Error fetching trivia:", error);
-        questionElement.innerHTML = "Sorry, we couldn't load a trivia question for this movie.";
-
-        const triviaButtons = document.querySelectorAll('.trivia-button');
-        triviaButtons.forEach(button => {
-            if (button) button.style.display = 'none';
-        });
-    }
-}
-
 function checkAnswer(selected) {
     const feedback = document.getElementById("feedback");
     const buttons = document.querySelectorAll(".trivia-button");
@@ -167,88 +172,6 @@ function checkAnswer(selected) {
     } else {
         feedback.textContent = `Risposta sbagliata. Quella corretta è: ${window.correctAnswer}`;
         feedback.style.color = "red";
-    }
-}
-
-async function fetchStreamingAvailability(movieId) {
-    try {
-        const url = `http://localhost:5002/api/v1/avail?imdb_id=${movieId}&country=it`;
-        const response = await fetch(url);
-        const responseData = await response.json();
-
-        // Check if response is successful and has data
-        if (responseData.status !== "success" || !responseData.data) {
-            throw new Error(responseData.message || "No streaming data available");
-        }
-
-        // Convert data to array if it's not already
-        const servicesArray = Array.isArray(responseData.data) ?
-            responseData.data :
-            [responseData.data];
-
-        // Map through the services array
-        const availabilityList = servicesArray.length > 0 ? servicesArray.map(item => {
-            return `
-                <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                    <img src="${item.logo || ''}" alt="${item.service_name}" style="width: 100px; height: 100px; margin-right: 30px; margin-left: 20px;">
-                    <a href="${item.link}" target="_blank" style="text-decoration: none;">
-                        <button class="streaming-button">
-                            ${item.service_type}
-                        </button>
-                    </a>
-                </div>
-            `;
-        }).join('') : '';
-
-        // Show no results message if list is empty
-        if (!availabilityList) {
-            document.getElementById('streaming-description').textContent = "No streaming services available.";
-            return;
-        }
-
-        document.getElementById('streaming-description').innerHTML = availabilityList;
-    } catch (error) {
-        console.error("Error fetching streaming availability:", error);
-        document.getElementById('streaming-description').textContent =
-            "Unable to retrieve streaming availability data.";
-    }
-}
-
-async function fetchYouTubeTrailer(movieTitle) {
-    try {
-        const query = encodeURIComponent(`${movieTitle} trailer`);
-        const url = `http://localhost:5009/api/v1/get_video?query=${query}`;
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.embed_url) {
-            const iframe = document.querySelector(".video-container iframe");
-            iframe.src = data.embed_url;
-        } else {
-            console.error("Nessun video trovato per il trailer.");
-        }
-    } catch (error) {
-        console.error("Errore durante il recupero del trailer:", error);
-    }
-}
-
-async function fetchSpotifyPlaylist(movieTitle) {
-    try {
-        const url = `http://localhost:5004/api/v1/search_playlist?playlist_name=${encodeURIComponent(movieTitle)}`;
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.spotify_url && data.cover_url && data.name) {
-            // Aggiorna i dettagli del contenitore
-            const spotifyContainer = document.getElementById("spotify-container");
-            document.getElementById("spotify-cover").src = data.cover_url;
-            document.getElementById("playlist-title").textContent = data.name;
-            spotifyContainer.dataset.link = data.spotify_url;
-        } else {
-            console.error("Dati insufficienti per la playlist");
-        }
-    } catch (error) {
-        console.error("Errore durante il recupero della playlist:", error);
     }
 }
 

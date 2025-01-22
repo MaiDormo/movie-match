@@ -32,15 +32,6 @@ db[collection].insertMany([
     { "genreId": 53, "name": "Thriller" },
     { "genreId": 10752, "name": "War" },
     { "genreId": 37, "name": "Western" },
-    // Additional TV genres
-    { "genreId": 10759, "name": "Action & Adventure" },
-    { "genreId": 10762, "name": "Kids" },
-    { "genreId": 10763, "name": "News" },
-    { "genreId": 10764, "name": "Reality" },
-    { "genreId": 10765, "name": "Sci-Fi & Fantasy" },
-    { "genreId": 10766, "name": "Soap" },
-    { "genreId": 10767, "name": "Talk" },
-    { "genreId": 10768, "name": "War & Politics" }
 ]);
 
 db[collection].createIndex({ "genreId": 1 }, { unique: true });

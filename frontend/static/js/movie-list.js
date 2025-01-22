@@ -4,6 +4,7 @@ function loadMovies(query = '') {
     const movieList = document.getElementById('movie-list');
     const spinner = document.getElementById('loading-spinner');
     const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
 
     const searchQuery = query || searchInput.value;
 
@@ -15,11 +16,14 @@ function loadMovies(query = '') {
     movieList.innerHTML = '';
     movieList.appendChild(spinner);
     spinner.style.display = 'block';
+    searchButton.disabled = true; // Disable the search button to prevent multiple clicks
 
     fetch(`http://localhost:5001/api/v1/search_info?title=${encodeURIComponent(searchQuery)}`)
         .then(response => response.json())
         .then(data => {
             spinner.style.display = 'none';
+            searchButton.disabled = false; // Re-enable the search button
+
             if (data.status === "success" && Array.isArray(data.data)) {
                 data.data.forEach(movie => {
                     const movieItem = document.createElement('div');
@@ -50,6 +54,7 @@ function loadMovies(query = '') {
         })
         .catch(error => {
             spinner.style.display = 'none';
+            searchButton.disabled = false; // Re-enable the search button
             console.error('Error loading movies:', error);
             movieList.innerHTML = 'Error loading movies. Please try again.';
         });
@@ -78,10 +83,12 @@ async function getMovieImdbId(tmdbId, defaultImdbId = 'tt0111161') { // Default 
 async function discoverMoviesByGenre() {
     const movieList = document.getElementById('movie-list');
     const spinner = document.getElementById('loading-spinner');
+    const searchButton = document.getElementById('search-button');
 
     movieList.innerHTML = '';
     movieList.appendChild(spinner);
     spinner.style.display = 'block';
+    searchButton.disabled = true; // Disable the search button to prevent multiple clicks
 
     try {
         const userGenres = await getUserGenres("0b8ac00c-a52b-4649-bd75-699b49c00ce3");
@@ -95,6 +102,7 @@ async function discoverMoviesByGenre() {
         if (!preferredGenres) {
             alert('No preferred genres found!');
             spinner.style.display = 'none';
+            searchButton.disabled = false; // Re-enable the search button
             return;
         }
 
@@ -102,6 +110,7 @@ async function discoverMoviesByGenre() {
         const data = await response.json();
 
         spinner.style.display = 'none';
+        searchButton.disabled = false; // Re-enable the search button
 
         if (data.status === "success" && data.data?.results) {
             data.data.results.forEach(movie => {
@@ -146,6 +155,7 @@ async function discoverMoviesByGenre() {
     } catch (error) {
         console.error('Error discovering movies:', error);
         spinner.style.display = 'none';
+        searchButton.disabled = false; // Re-enable the search button
         movieList.innerHTML = 'Error discovering movies. Please try again.';
     }
 }

@@ -30,6 +30,8 @@ services:
       - "5001:5000"
     environment:
       - OMDB_API_KEY=${OMDB_API_KEY}
+    volumes:
+      - ./adapter_services/omdb_adapter:/omdb_adapter
   
   streaming-availability-adapter:
     <<: [*adapter-service, *health-check]
@@ -103,6 +105,8 @@ services:
     environment:
       - ATLAS_URI=${ATLAS_URI}
       - DB_NAME=${DB_NAME}
+    volumes:
+      - ./adapter_services/user_db_adapter:/user_db_adapter
 
   genres-db-adapter:
     <<: [*adapter-service, *health-check]
@@ -114,6 +118,8 @@ services:
     environment:
       - ATLAS_URI=${ATLAS_URI}
       - DB_NAME=${DB_NAME}
+    volumes:
+      - ./adapter_services/genres_db_adapter:/genres_db_adapter
 
   # Email Services
   email-check-adapter:
@@ -125,6 +131,18 @@ services:
       - "5011:5000"
     environment:
       - ABSTRACT_API_KEY=${ABSTRACT_API_KEY}
+    volumes:
+      - ./adapter_services/email_check_adapter:/email_check_adapter
+
+  movie-details-service:
+    <<: [*adapter-service, *health-check]
+    build:
+      context: ./business_logic_services/movie_details_service
+    container_name: movie-details-service
+    ports:
+      - "5005:5000"
+    volumes:
+      - ./business_logic_services/movie_details_service:/movie_details_service
 
   # Business Logic Services
   valid-email-service:
@@ -134,6 +152,8 @@ services:
     container_name: valid-email-service
     ports:
       - "5012:5000"
+    volumes:
+      - ./business_logic_services/valid_email_service:/valid_email_service
     #depends_on:
       # email-check-adapter:
       #   condition: service_healthy
@@ -147,6 +167,8 @@ services:
     container_name: user-registration-service
     ports:
       - "5013:5000"
+    volumes:
+      - ./process_centric_services/user_registration_service:/user_registration_service
     #depends_on:
       # valid-email-service:
       #   condition: service_healthy
@@ -162,6 +184,8 @@ services:
     container_name: user-login-service
     ports:
       - "5014:5000"
+    volumes:
+      - ./process_centric_services/user_login_service:/user_login_service
     # depends_on:
       # user-db-adapter:
       #   condition: service_healthy
