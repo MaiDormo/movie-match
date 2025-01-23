@@ -1,7 +1,7 @@
 import asyncio
 from functools import partial
 from typing import Any, Dict
-from fastapi import APIRouter, HTTPException, Depends, status, Query
+from fastapi import APIRouter, HTTPException, Depends, status, Query, Body
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import httpx
@@ -13,9 +13,7 @@ class Settings(BaseModel):
     preferences_url: str = "http://user-db-adapter:5000/api/v1/user"
     tmdb_url: str = "http://tmdb-adapter:5000/api/v1/discover-movies"
     tmdb_movie_url: str = "http://tmdb-adapter:5000/api/v1/movie"
-
-    streaming_url: str = "http://streaming-availability-adapter:5000/api/v1/avail"
-    trivia_url: str = "http://groq-adapter:5000/api/v1/get_trivia"
+    
     timeout: float = 10.0
     max_retries: int = 3
     retry_delay: float = 1.0
@@ -29,21 +27,27 @@ def get_settings() -> Settings:
     """
     return Settings()
 
-async def fetch_data(url: str, params: dict = None) -> Dict[str, Any]:
+async def fetch_data(url: str, method: str = "GET", params: dict = None) -> Dict[str, Any]:
     """
     Generic function to fetch data from external services.
     """
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, params=params)
+        if method == "PUT":
+            response = await client.put(url, json=params)
+        else:
+            response = await client.get(url, params=params)
         response.raise_for_status()
         return response.json()
     
-async def fetch_data(url: str, params: dict = None, settings: Settings = None) -> Dict[str, Any] | None:
+async def fetch_data(url: str, method: str = "GET", params: dict = None, settings: Settings = None) -> Dict[str, Any] | None:
     """Enhanced fetch function with retry logic"""
     for attempt in range(settings.max_retries):
         try:
             async with httpx.AsyncClient(timeout=settings.timeout) as client:
-                response = await client.get(url, params=params)
+                if method == "PUT":
+                    response = await client.put(url, json=params)
+                else:
+                    response = await client.get(url, params=params)
                 response.raise_for_status()
                 return response.json()
         except (httpx.ConnectError, httpx.TimeoutException):
@@ -51,6 +55,7 @@ async def fetch_data(url: str, params: dict = None, settings: Settings = None) -
                 raise
             await asyncio.sleep(settings.retry_delay)
     return None
+
     
 def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
     """
@@ -226,6 +231,44 @@ async def get_user_genres(user_id: str, settings: Settings = Depends(get_setting
             message="An unexpected error occurred",
             data={"error": str(e)}
         )
+    
+async def update_user_preferences(
+    id: str = Query(
+        ...,
+        description="Unique identifier of the user whose preferences are to be updated",
+        example="066de609-b04a-4b30-b46c-32537c7f1f6e"
+    ),
+    preferences: list[int] = Body(
+        ...,
+        description="List of updated preference IDs",
+        example=[28, 35, 12]
+    ),
+    settings: Settings = Depends(get_settings)
+) -> JSONResponse:
+    """
+    Update user preferences by making a PUT request to the user service.
+
+    Args:
+        user_id (str): Unique identifier of the user.
+        preferences (list[int]): List of updated preference IDs.
+        settings (Settings): Dependency injection for service URLs.
+
+    Returns:
+        JSONResponse: A standardized API response indicating success or failure.
+    """
+    url = f"{settings.preferences_url}?id={id}"
+    payload = {"preferences": preferences}
+
+    try:
+        response = await fetch_data(url, method="PUT", params=payload, settings=settings)
+        return response
+    except Exception as e:
+        return create_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="An unexpected error occurred while updating preferences.",
+            data={"error:": str(e)+url}
+        )
+
 
 
 async def health_check():
