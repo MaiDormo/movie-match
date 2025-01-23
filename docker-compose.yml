@@ -205,6 +205,18 @@ services:
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
 
+
+  movie-match-service:
+    <<: [*adapter-service, *health-check]
+    build:
+      context: ./process_centric_services/movie_match_service
+    container_name: movie-match-service
+    ports:
+      - "5017:5000"
+    volumes:
+      - ./process_centric_services/movie_match_service:/movie_match_service
+    #depends_on:
+
   # Frontend Services
   frontend:
     <<: [*adapter-service, *health-check]

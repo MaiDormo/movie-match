@@ -80,7 +80,7 @@ def create_response(status_code: int, message: str, data: Dict[str, Any] = None)
 async def get_text_movie_search(query: str, settings: Settings = Depends(get_settings)) -> JSONResponse:
     try:
         # Ottieni generi e preferenze in parallelo
-        movie_list_data = await fetch_data(settings.omdb_url, {"title": query}, settings=settings)
+        movie_list_data = await fetch_data(url=settings.omdb_url, params={"title": query}, settings=settings)
 
         # Risposta di successo
         return create_response(
@@ -106,8 +106,8 @@ async def get_genre_movie_search(
     try:
         # Ottieni la lista dei film da TMDB
         movie_list_data = await fetch_data(
-            settings.tmdb_url,
-            {
+            url=settings.tmdb_url,
+            params={
                 "language": language,
                 "with_genres": with_genres,
                 "vote_avg_gt": vote_avg_gt,
@@ -130,8 +130,8 @@ async def get_genre_movie_search(
             movie_id = movie["tmdbId"]
             try:
                 details_response = await fetch_data(
-                    settings.tmdb_movie_url,
-                    {"id": movie_id, "language": language},
+                    url=settings.tmdb_movie_url,
+                    params={"id": movie_id, "language": language},
                     settings=settings
                 )
 
@@ -178,8 +178,8 @@ async def get_user_genres(user_id: str, settings: Settings = Depends(get_setting
     try:
         # Ottieni generi e preferenze in parallelo
         genres_data, preferences_data = await asyncio.gather(
-            fetch_data(settings.genres_url, settings=settings),
-            fetch_data(settings.preferences_url, params={"id": user_id}, settings=settings),
+            fetch_data(url=settings.genres_url, settings=settings),
+            fetch_data(url=settings.preferences_url, params={"id": user_id}, settings=settings),
             return_exceptions=True
         )
         if not genres_data:
@@ -260,7 +260,7 @@ async def update_user_preferences(
     payload = {"preferences": preferences}
 
     try:
-        response = await fetch_data(url, method="PUT", params=payload, settings=settings)
+        response = await fetch_data(url=url, method="PUT", params=payload, settings=settings)
         return response
     except Exception as e:
         return create_response(
