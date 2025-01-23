@@ -1,3 +1,4 @@
+import json
 from fastapi import Depends, Query, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -62,7 +63,7 @@ def make_request(url: str, params: Dict[str, str]) -> Dict[str, Any]:
     if 'Error' in data:
         return create_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            message=data['Error']
+            message=data
         )
     return data
 
@@ -79,6 +80,11 @@ async def get_movies(
     }
     
     movies = make_request(settings.omdb_url, params)
+
+    # If make_request returned a JSONResponse (error case), return it directly
+    if isinstance(movies, JSONResponse):
+        return movies
+    
     return create_response(
         status_code=status.HTTP_200_OK,
         message="Movies retrieved successfully",
@@ -96,7 +102,18 @@ async def get_movie_id(
         "i": id,
     }
     
-    return make_request(settings.omdb_url, params)
+    movie_data = make_request(settings.omdb_url, params)
+
+    # If make_request returned a JSONResponse (error case), return it directly
+    if isinstance(movie_data, JSONResponse):
+        return movie_data
+        
+    # Otherwise wrap the data in a standardized response
+    return create_response(
+        status_code=status.HTTP_200_OK,
+        message="Movie details retrieved successfully",
+        data=movie_data
+    )
 
 @handle_api_errors
 async def get_movies_with_info(
@@ -121,12 +138,19 @@ async def get_movies_with_info(
     # Get detailed information for each movie
     detailed_movies = []
     for movie in films_list:
-        movie_details = await get_movie_id(id=movie["imdbID"], settings=settings)
-        detailed_movies.append({
-            **movie,
-            "Genre": movie_details.get("Genre", "N/A"),
-            "imdbRating": movie_details.get("imdbRating", "N/A")
-        })
+        movie_details_response = await get_movie_id(id=movie["imdbID"], settings=settings)
+        
+        # Extract data from JSONResponse
+        movie_details = movie_details_response.body.decode('utf-8')
+        movie_details = json.loads(movie_details)
+        
+        if movie_details["status"] == "success":
+            movie_data = movie_details["data"]
+            detailed_movies.append({
+                **movie,
+                "Genre": movie_data.get("Genre", "N/A"),
+                "imdbRating": movie_data.get("imdbRating", "N/A")
+            })
 
     return create_response(
         status_code=status.HTTP_200_OK,

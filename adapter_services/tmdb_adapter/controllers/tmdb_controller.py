@@ -67,7 +67,7 @@ def filter_data(tmdb_data: dict) -> dict:
         )
     return tmdb_data["imdb_id"]
 
-async def get_movie_tmdb_id(
+async def get_movie_imdb_id(
     id: int = Query(...), 
     language: str = Query(...), 
     settings: Settings = Depends(get_settings)

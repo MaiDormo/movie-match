@@ -80,6 +80,8 @@ async def get_movie_details(movie_id: str, settings: Settings = Depends(get_sett
                 message="OMDB service unavailable"
             )
 
+        omdb_data = omdb_data["data"]
+
         # Parallel fetch remaining data
         fetch = partial(fetch_data, settings=settings)
         tasks = [

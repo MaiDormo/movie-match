@@ -1,14 +1,52 @@
 import os
+from typing import Any, Dict, List
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from routes.omdb_routes import router as omdb_router
+
+class ValidationError(BaseModel):
+    field: str
+    message: str
+    type: str
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "field": "query -> title",
+                "message": "field required",
+                "type": "missing"
+            }
+        }
+
+class ErrorResponse(BaseModel):
+    status: str = "error"
+    code: int
+    message: str
+    details: List[ValidationError] | Dict[str, Any] | None = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "status": "error",
+                "code": 422,
+                "message": "Request validation failed",
+                "details": [
+                    {
+                        "field": "query -> title",
+                        "message": "field required",
+                        "type": "missing"
+                    }
+                ]
+            }
+        }
 
 app = FastAPI(
     title="OMDB API Adapter",
     description="An adapter service for OMDB API using FastAPI",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 app.add_middleware(
