@@ -144,6 +144,16 @@ services:
     volumes:
       - ./business_logic_services/movie_details_service:/movie_details_service
 
+  movie-search-service:
+    <<: [*adapter-service, *health-check]
+    build:
+      context: ./business_logic_services/movie_search_service
+    container_name: movie-search-service
+    ports:
+      - "5016:5000"
+    volumes:
+      - ./business_logic_services/movie_search_service:/movie_search_service
+
   # Business Logic Services
   valid-email-service:
     <<: [*adapter-service, *health-check]
