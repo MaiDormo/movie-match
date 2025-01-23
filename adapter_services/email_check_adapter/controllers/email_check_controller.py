@@ -3,14 +3,34 @@ from typing import Dict, Any
 from fastapi import Depends, Query, HTTPException, status
 from fastapi.responses import JSONResponse
 from requests.exceptions import RequestException, HTTPError, ConnectionError, Timeout
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl
 import requests
 
 class Settings(BaseModel):
     """Configuration settings for the email validation service"""
-    url: HttpUrl = "https://emailvalidation.abstractapi.com/v1/"
-    api_key: str = os.getenv("ABSTRACT_API_KEY")
-    timeout: int = 10  # seconds
+    url: HttpUrl = Field(
+        default="https://emailvalidation.abstractapi.com/v1/",
+        description="Base URL for the Abstract Email Validation API"
+    )
+    api_key: str = Field(
+        default=os.getenv("ABSTRACT_API_KEY"),
+        description="API key for authenticating with Abstract Email Validation API"
+    )
+    timeout: int = Field(
+        default=10,
+        description="Request timeout in seconds",
+        ge=1,
+        le=30
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "url": "https://emailvalidation.abstractapi.com/v1/",
+                "api_key": "your_api_key_here",
+                "timeout": 10
+            }
+        }
 
 def get_settings() -> Settings:
     """Get application settings with validation"""
@@ -54,7 +74,11 @@ async def health_check() -> JSONResponse:
     )
 
 async def check_email(
-    email: str = Query(..., description="Email address to validate"),
+    email: str = Query(
+        ..., 
+        description="Email address to validate",
+        example="user@example.com",
+    ),
     settings: Settings = Depends(get_settings)
 ) -> JSONResponse:
     """

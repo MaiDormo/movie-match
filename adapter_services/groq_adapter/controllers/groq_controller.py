@@ -33,16 +33,22 @@ async def health_check() -> JSONResponse:
     )
 
 async def get_trivia_question(
-    movie_title: str = Query(..., description="Movie title to generate trivia for"),
+    movie_title: str = Query(
+        ..., 
+        description="Movie title to generate trivia for",
+        example="Titanic",
+        min_length=1,
+        max_length=200
+    ),
     settings: Settings = Depends(get_settings)
 ) -> JSONResponse:
     """Generate a trivia question for a given movie"""
     
     # Validate API key
     if not settings.groq_api_key:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="GROQ_API_KEY environment variable is not set"
+            message="GROQ_API_KEY environment variable is not set"
         )
 
     try:
@@ -82,27 +88,27 @@ async def get_trivia_question(
         )
 
     except requests.exceptions.HTTPError as e:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"HTTP error occurred: {str(e)}"
+            message=f"HTTP error occurred: {str(e)}"
         )
     except requests.exceptions.ConnectionError:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="GROQ API is currently unavailable"
+            message="GROQ API is currently unavailable"
         )
     except requests.exceptions.Timeout:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail="Request to GROQ API timed out"
+            message="Request to GROQ API timed out"
         )
     except requests.exceptions.RequestException as e:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error calling GROQ API: {str(e)}"
+            message=f"Error calling GROQ API: {str(e)}"
         )
     except Exception as e:
-        raise HTTPException(
+        return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {str(e)}"
+            message=f"Unexpected error: {str(e)}"
         )

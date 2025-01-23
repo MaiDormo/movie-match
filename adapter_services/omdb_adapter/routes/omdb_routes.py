@@ -167,8 +167,11 @@ router.get(
     response_model=BaseResponse,
     responses={
         200: {"description": "Service is up and running", "model": BaseResponse},
+        404: {"description": "HTTP error occurred: [message]", "model": BaseResponse},
         405: {"description": "The HTTP method is not allowed for this endpoint", "model": BaseResponse},
-        500: {"description": "Internal server error", "model": BaseResponse}
+        500: {"description": "Internal server error", "model": BaseResponse},
+        503: {"description": "OMDB API is currently unavailable", "model": BaseResponse},
+        504: {"description": "Request to OMDB API timed out", "model": BaseResponse}
     }
 )(health_check)
 
@@ -186,7 +189,9 @@ router.get(
             "model": ErrorResponse,
             "description": "Validation Error"
         },
-        500: {"description": "Internal server error", "model": BaseResponse}
+        500: {"description": "Internal server error", "model": BaseResponse},
+        503: {"description": "OMDB API is currently unavailable", "model": BaseResponse},
+        504: {"description": "Request to OMDB API timed out", "model": BaseResponse}
     }
 )(get_movies)
 
@@ -204,7 +209,9 @@ router.get(
             "model": ErrorResponse,
             "description": "Validation Error"
         },
-        500: {"description": "Internal server error", "model": BaseResponse}
+        500: {"description": "Internal server error", "model": BaseResponse},
+        503: {"description": "OMDB API is currently unavailable", "model": BaseResponse},
+        504: {"description": "Request to OMDB API timed out", "model": BaseResponse}
     }
 )(get_movie_id)
 
@@ -222,6 +229,8 @@ router.get(
             "model": ErrorResponse,
             "description": "Validation Error"
         },
-        500: {"description": "Internal server error", "model": BaseResponse}
+        500: {"description": "Internal server error", "model": BaseResponse},
+        503: {"description": "OMDB API is currently unavailable", "model": BaseResponse},
+        504: {"description": "Request to OMDB API timed out", "model": BaseResponse}
     }
 )(get_movies_with_info)

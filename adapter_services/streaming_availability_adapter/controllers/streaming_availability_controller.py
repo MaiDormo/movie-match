@@ -73,7 +73,7 @@ def filter_data(stream_avail_data, country):
     # Create a sorted list by service_name
     return sorted(result, key=lambda x: x['service_name'])
 
-def make_request(url, headers, params, country):
+def make_request(url, headers, params, country) -> Dict | JSONResponse:
     try:
         response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
@@ -87,8 +87,7 @@ def make_request(url, headers, params, country):
     except requests.exceptions.HTTPError as e:
         return create_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            message="HTTP error occurred",
-            data={"error": str(e)}
+            message=f"HTTP error occurred: {str(e)}",
         )
     except requests.exceptions.ConnectionError as e:
         return create_response(
@@ -111,10 +110,22 @@ def make_request(url, headers, params, country):
     
 
 async def get_movie_availability(
-    imdb_id: str = Query(...),
-    country: str = Query(...),
+    imdb_id: str = Query(
+        ...,
+        description="IMDB ID of the movie",
+        example="tt0120338",
+        regex="^tt[0-9]{7,8}$"
+    ),
+    country: str = Query(
+        ...,
+        description="Two-letter country code (ISO 3166-1 alpha-2 (lowercase))",
+        example="us",
+        min_length=2,
+        max_length=2,
+        regex="^[a-z]{2}$"
+    ),
     settings: Settings = Depends(get_settings)
-):
+) -> JSONResponse:
     if not imdb_id or not country:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

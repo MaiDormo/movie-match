@@ -25,24 +25,43 @@ def create_response(status_code: int, message: str, data: Optional[Dict[str, Any
         "message": message
     }
     if data:
-        content.update(data)
+        content["data"] = data
     return JSONResponse(content=content, status_code=status_code)
 
-def make_request(url: str, headers: dict, params: dict) -> dict:
-    """Make request to Spotify API with error handling"""
+def make_request(url: str, headers: dict, params: dict) -> Dict[str, Any]:
     try:
         response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.HTTPError as e:
-        raise HTTPException(
+        if e.response.status_code == 429:
+            return create_response(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                message="Spotify API rate limit exceeded"
+            )
+        elif e.response.status_code == 401:
+            return create_response(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                message="Invalid Spotify API credentials"
+            )
+        return create_response(
             status_code=e.response.status_code,
-            detail=f"Spotify API error: {str(e)}"
+            message=f"Spotify API error: {str(e)}"
+        )
+    except requests.exceptions.ConnectionError:
+        return create_response(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message="Spotify service is currently unavailable"
+        )
+    except requests.exceptions.Timeout:
+        return create_response(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            message="Request to Spotify API timed out"
         )
     except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to connect to Spotify: {str(e)}"
+        return create_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message=f"Failed to connect to Spotify: {str(e)}"
         )
 
 def get_spotify_access_token(settings: Settings) -> str:
@@ -54,97 +73,15 @@ def get_spotify_access_token(settings: Settings) -> str:
         )
         response.raise_for_status()
         return response.json()["access_token"]
-    except requests.RequestException as e:
-        raise HTTPException(
+    except requests.exceptions.HTTPError as e:
+        return create_response(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="Invalid Spotify API credentials"
+        )
+    except requests.exceptions.RequestException as e:
+        return create_response(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to obtain Spotify access token: {str(e)}"
-        )
-
-def search_song_on_spotify(song_name: str, access_token: str, settings: Settings) -> Optional[str]:
-    headers = {"Authorization": f"Bearer {access_token}"}
-    params = {
-        "q": song_name,
-        "type": "track",
-        "limit": 1,
-        "market": "US"
-    }
-    data = make_request(settings.spotify_url, headers, params)
-    tracks = data.get("tracks", {}).get("items", [])
-    return tracks[0]["id"] if tracks else None
-
-def get_track_preview_url(track_id: str, access_token: str, settings: Settings) -> str:
-    headers = {"Authorization": f"Bearer {access_token}"}
-    url = f"{settings.spotify_track_url}/{track_id}"
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    track_data = response.json()
-    preview_url = track_data.get("preview_url")
-    if not preview_url:
-        raise ValueError(f"Preview for track ID {track_id} not available.")
-    return preview_url
-
-def get_track_details(track_id: str, access_token: str, settings: Settings) -> dict:
-    headers = {"Authorization": f"Bearer {access_token}"}
-    url = f"{settings.spotify_track_url}/{track_id}"
-    params = {"market": "US"}
-    response = requests.get(url, headers=headers, params=params)
-    response.raise_for_status()
-    track_data = response.json()
-    return {
-        "song_name": track_data.get("name"),
-        "artist": track_data["artists"][0]["name"],
-        "album": track_data["album"]["name"],
-        "preview_url": track_data.get("preview_url"),
-        "spotify_url": track_data["external_urls"]["spotify"],
-        "track_id": track_data["id"],
-        "popularity": track_data.get("popularity"),
-        "duration_ms": track_data.get("duration_ms"),
-        "explicit": track_data.get("explicit"),
-        "release_date": track_data["album"].get("release_date")
-    }
-
-def get_preview_from_embed(track_id: str) -> Optional[str]:
-    embed_url = f"https://open.spotify.com/embed/track/{track_id}"
-    response = requests.get(embed_url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    resource_element = soup.find(id="resource")
-    if resource_element:
-        track_details = resource_element.get('data-resource')
-        return track_details.get("preview_url")
-    return None
-
-async def get_song(
-    song_name: str = Query(..., description="Name of the song to search"),
-    settings: Settings = Depends(get_settings)
-) -> JSONResponse:
-    try:
-        access_token = get_spotify_access_token(settings)
-        track_id = search_song_on_spotify(song_name, access_token, settings)
-        if not track_id:
-            return create_response(
-                status_code=status.HTTP_404_NOT_FOUND, 
-                message="No track found"
-            )
-        track_details = get_track_details(track_id, access_token, settings)
-        return create_response(
-            status_code=status.HTTP_200_OK,
-            message="Track found successfully",
-            data=track_details
-        )
-    except HTTPException as e:
-        return create_response(
-            status_code=e.status_code,
-            message=str(e.detail)
-        )
-    except ValueError as e:
-        return create_response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            message=str(e)
-        )
-    except Exception as e:
-        return create_response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            message="Internal server error"
+            message=f"Failed to obtain Spotify access token: {str(e)}"
         )
 
 def search_playlist_on_spotify(playlist_name: str, access_token: str, settings: Settings) -> Optional[str]:
@@ -158,14 +95,6 @@ def search_playlist_on_spotify(playlist_name: str, access_token: str, settings: 
     data = make_request(settings.spotify_url, headers, params)
     playlists = data.get("playlists", {}).get("items", [])
     return playlists[0]["id"] if playlists else None
-
-def get_playlist_url(playlist_id: str, access_token: str, settings: Settings) -> str:
-    headers = {"Authorization": f"Bearer {access_token}"}
-    url = f"https://api.spotify.com/v1/playlists/{playlist_id}"
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    playlist_data = response.json()
-    return playlist_data["external_urls"]["spotify"]
 
 async def get_playlist_info(
     playlist_name: str = Query(..., description="Name of the playlist to search"),
@@ -201,52 +130,6 @@ async def get_playlist_info(
             status_code=status.HTTP_200_OK,
             message="Playlist found successfully",
             data=playlist_info
-        )
-    except HTTPException as e:
-        return create_response(
-            status_code=e.status_code,
-            message=str(e.detail)
-        )
-    except Exception as e:
-        return create_response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            message="Internal server error"
-        )
-
-def get_playlist_tracks(playlist_id: str, access_token: str, settings: Settings) -> list:
-    headers = {"Authorization": f"Bearer {access_token}"}
-    url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
-    params = {"market": "US"}
-    response = requests.get(url, headers=headers, params=params)
-    response.raise_for_status()
-    track_data = response.json()
-    tracks = []
-    for track_item in track_data.get("items", [])[:10]:
-        track = track_item["track"]
-        tracks.append({
-            "song_name": track["name"],
-            "track_id": track["id"],
-            "preview_url": track.get("preview_url"),
-        })
-    return tracks
-
-async def get_playlist(
-    playlist_name: str = Query(..., description="Name of the playlist to search"),
-    settings: Settings = Depends(get_settings)
-) -> JSONResponse:
-    try:
-        access_token = get_spotify_access_token(settings)
-        playlist_id = search_playlist_on_spotify(playlist_name, access_token, settings)
-        if not playlist_id:
-            return create_response(
-                status_code=status.HTTP_404_NOT_FOUND,
-                message="No playlist found"
-            )
-        playlist_url = get_playlist_url(playlist_id, access_token, settings)
-        return create_response(
-            status_code=status.HTTP_200_OK,
-            message="Playlist found successfully",
-            data={"playlist_url": playlist_url}
         )
     except HTTPException as e:
         return create_response(

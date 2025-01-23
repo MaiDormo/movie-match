@@ -15,6 +15,7 @@ from config.databse import get_mongo_client
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class Settings(BaseModel):
+    """Database configuration settings"""
     db_name: str = os.getenv("DB_NAME", "movie-match")
     db_collection: str = "users"
 
@@ -45,7 +46,17 @@ async def health_check() -> JSONResponse:
     )
 
 async def create_user(
-    user: User = Body(...), 
+    user: User = Body(
+        ...,
+        description="User object to create",
+        example={
+            "name": "John",
+            "surname": "Doe",
+            "email": "john.doe@example.com",
+            "password": "securepassword123",
+            "preferences": [28, 35]
+        }
+    ), 
     users_collection: Collection = Depends(get_user_collection)
 ) -> JSONResponse:
     """Create a new user."""
@@ -87,8 +98,17 @@ async def create_user(
         )
 
 async def list_users(
-    limit: int = 100, 
-    offset: int = 0, 
+    limit: int = Query(
+        100,
+        description="Maximum number of users to return",
+        ge=1,
+        le=1000
+    ),
+    offset: int = Query(
+        0,
+        description="Number of users to skip",
+        ge=0
+    ),
     users_collection: Collection = Depends(get_user_collection)
 ) -> JSONResponse:
     """List all users with pagination."""
@@ -113,7 +133,11 @@ async def list_users(
         )
 
 async def find_user(
-    id: str = Query(...), 
+    id: str = Query(
+        ...,
+        description="Unique identifier of the user",
+        example="066de609-b04a-4b30-b46c-32537c7f1f6e"
+    ), 
     users_collection: Collection = Depends(get_user_collection)
 ) -> JSONResponse:
     """Find a user by ID."""
@@ -131,7 +155,12 @@ async def find_user(
     )
 
 async def find_user_by_email(
-    email: str = Query(...), 
+    email: str = Query(
+        ...,
+        description="Email address of the user",
+        example="john.doe@example.com",
+        regex=r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    ), 
     users_collection: Collection = Depends(get_user_collection)
 ) -> JSONResponse:
     """Find a user by email."""
@@ -149,8 +178,20 @@ async def find_user_by_email(
     )
 
 async def update_user(
-    id: str = Query(...),
-    user: UserUpdate = Body(...),
+    id: str = Query(
+        ...,
+        description="Unique identifier of the user to update",
+        example="066de609-b04a-4b30-b46c-32537c7f1f6e"
+    ),
+    user: UserUpdate = Body(
+        ...,
+        description="Updated user properties",
+        example={
+            "name": "John",
+            "surname": "Smith",
+            "preferences": [28, 35, 12]
+        }
+    ),
     users_collection: Collection = Depends(get_user_collection)
 ) -> JSONResponse:
     """Update a user by ID."""
@@ -187,7 +228,11 @@ async def update_user(
         )
 
 async def delete_user(
-    id: str = Query(...), 
+    id: str = Query(
+        ...,
+        description="Unique identifier of the user to delete",
+        example="066de609-b04a-4b30-b46c-32537c7f1f6e"
+    ),
     users_collection: Collection = Depends(get_user_collection)
 ) -> JSONResponse:
     """Delete a user by ID."""

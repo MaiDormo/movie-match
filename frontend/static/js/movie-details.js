@@ -76,9 +76,9 @@ function updateYouTubeTrailer(youtubeData) {
 
 function updateSpotifyPlaylist(spotifyData) {
     const spotifyContainer = document.getElementById("spotify-container");
-    document.getElementById("spotify-cover").src = spotifyData.cover_url;
-    document.getElementById("playlist-title").textContent = spotifyData.name;
-    spotifyContainer.dataset.link = spotifyData.spotify_url;
+    document.getElementById("spotify-cover").src = spotifyData.data.cover_url;
+    document.getElementById("playlist-title").textContent = spotifyData.data.name;
+    spotifyContainer.dataset.link = spotifyData.data.spotify_url;
 }
 
 function updateStreamingAvailability(streamingData) {

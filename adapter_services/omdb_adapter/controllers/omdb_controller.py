@@ -177,6 +177,7 @@ async def get_movies_with_info(
         data=detailed_movies
     )
 
+@handle_api_errors
 async def health_check() -> JSONResponse:
     """Health check endpoint"""
     return create_response(

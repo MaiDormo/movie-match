@@ -117,12 +117,12 @@ async def get_genre_movie_search(
                 message="TMDB service unavailable"
             )
 
-        movies = movie_list_data["data"]["results"]
+        movies = movie_list_data["data"]["movie_list"]
         movie_details = []
 
         # Per ogni film, fai una chiamata all'endpoint per recuperare dettagli aggiuntivi
         for movie in movies:
-            movie_id = movie["id"]
+            movie_id = movie["tmdbId"]
             try:
                 details_response = await fetch_data(
                     settings.tmdb_movie_url,
@@ -131,16 +131,16 @@ async def get_genre_movie_search(
                 )
 
                 if details_response.get("status") == "success":
-                    details = details_response["data"]["movie_list"]
+                    details = details_response["data"]["movie"]
 
                     # Crea un oggetto con i dati richiesti
                     processed_movie = {
-                        "Title": details.get("title", "N/A"),
-                        "Year": details.get("release_date", "N/A").split("-")[0],
-                        "imdbID": details.get("imdb_id", "N/A"),
-                        "Poster": f"https://image.tmdb.org/t/p/original/{details.get('poster_path', '')}",
-                        "Genre": ", ".join([genre["name"] for genre in details.get("genres", [])]),
-                        "imdbRating": round(details.get("vote_average", 0), 1)
+                        "Title": details.get("Title", "N/A"),
+                        "Year": details.get("Year", "N/A").split("-")[0],
+                        "imdbID": details.get("imdbId", "N/A"),
+                        "Poster": f"https://image.tmdb.org/t/p/original/{details.get('Poster', '')}",
+                        "Genre": ", ".join([genre["name"] for genre in details.get("GenreIds", [])]),
+                        "imdbRating": round(details.get("Rating", 0), 1)
                     }
                     movie_details.append(processed_movie)
             except Exception as e:

@@ -41,7 +41,7 @@ async def health_check() -> JSONResponse:
     )
 
 async def create_genre(
-    genre: Genre, 
+    genre: Genre = Body(..., description="Genre object to create"), 
     genres_collection: Collection = Depends(get_collection)
 ) -> JSONResponse:
     try:
@@ -92,7 +92,12 @@ async def list_genres(
         )
 
 async def get_genre(
-    id: int = Query(...), 
+    id: int = Query(
+        ...,
+        description="Unique identifier of the genre",
+        ge=1,
+        example=28
+    ), 
     genres_collection: Collection = Depends(get_collection)
 ) -> JSONResponse:
     genre = genres_collection.find_one({"genreId": id})
@@ -109,8 +114,16 @@ async def get_genre(
     )
 
 async def update_genre(
-    id: int = Query(...),
-    genre: GenreUpdate = Body(...),
+    id: int = Query(
+        ..., 
+        description="Unique identifier of the genre to update",
+        ge=1,
+        example=28
+    ),
+    genre: GenreUpdate = Body(
+        ...,
+        description="Updated genre properties"
+    ),
     genres_collection: Collection = Depends(get_collection)
 ) -> JSONResponse:
     try:
@@ -152,7 +165,12 @@ async def update_genre(
         )
 
 async def delete_genre(
-    id: int = Query(...), 
+    id: int = Query(
+        ..., 
+        description="Unique identifier of the genre to update",
+        ge=1,
+        example=28
+    ), 
     genres_collection: Collection = Depends(get_collection)
 ) -> JSONResponse:
     result = genres_collection.delete_one({"genreId": id})
