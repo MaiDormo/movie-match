@@ -95,8 +95,17 @@ async def get_movies(
 async def get_movie_id(
     id: str = Query(..., description="IMDB movie ID"),
     settings: Settings = Depends(get_settings)
-) -> Dict[str, Any]:
-    """Get movie details by IMDB ID"""
+) -> JSONResponse:
+    """
+    Get movie details by IMDB ID and filter response to match Movie schema
+    
+    Args:
+        id: IMDB movie ID
+        settings: Application settings
+        
+    Returns:
+        JSONResponse with filtered movie data
+    """
     params = {
         "apikey": settings.omdb_api_key,
         "i": id,
@@ -104,15 +113,25 @@ async def get_movie_id(
     
     movie_data = make_request(settings.omdb_url, params)
 
-    # If make_request returned a JSONResponse (error case), return it directly
     if isinstance(movie_data, JSONResponse):
         return movie_data
-        
-    # Otherwise wrap the data in a standardized response
+    
+    # Filter data
+    filtered_data = {
+        "Title": movie_data.get("Title", "N/A"),
+        "Year": movie_data.get("Year", "N/A"),
+        "imdbID": movie_data.get("imdbID", "N/A"), 
+        "Type": movie_data.get("Type", "movie"),
+        "Director": movie_data.get("Director", "N/A"),
+        "Genre": movie_data.get("Genre", "N/A"),
+        "Poster": movie_data.get("Poster", "N/A"),
+        "imdbRating": movie_data.get("imdbRating", "N/A")
+    }
+
     return create_response(
         status_code=status.HTTP_200_OK,
         message="Movie details retrieved successfully",
-        data=movie_data
+        data=filtered_data
     )
 
 @handle_api_errors

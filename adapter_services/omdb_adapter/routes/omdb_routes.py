@@ -11,6 +11,8 @@ class Movie(BaseModel):
     Year: str = Field(..., description="The release year of the movie in YYYY format")  
     imdbID: str = Field(..., description="Unique IMDB identifier starting with 'tt' followed by digits")
     Type: str = Field(..., description="The media type (e.g., 'movie', 'series', 'episode')")
+    Director: str = Field(..., description="Name of the movie director(s)")
+    Genre: str = Field(..., description="Comma-separated list of genres (e.g., 'Action, Adventure, Sci-Fi')")
     Poster: str = Field(..., description="URL to the movie poster image on IMDB")
 
     class Config:
@@ -20,12 +22,13 @@ class Movie(BaseModel):
                 "Year": "1994", 
                 "imdbID": "tt0111161",
                 "Type": "movie",
+                "Director": "Frank Darabont",
+                "Genre": "Drama",
                 "Poster": "https://m.media-amazon.com/images/M/..."
             }
         }
 
 class MovieDetails(Movie):
-    Genre: str = Field(..., description="Comma-separated list of genres (e.g., 'Action, Adventure, Sci-Fi')")
     imdbRating: str = Field(..., description="IMDB rating from 0 to 10 as a string (e.g., '8.5')")
 
     class Config:
@@ -35,8 +38,9 @@ class MovieDetails(Movie):
                 "Year": "1994",
                 "imdbID": "tt0111161", 
                 "Type": "movie",
-                "Poster": "https://m.media-amazon.com/images/M/...",
+                "Director": "Frank Darabont",
                 "Genre": "Drama",
+                "Poster": "https://m.media-amazon.com/images/M/...",
                 "imdbRating": "9.3"
             }
         }
@@ -61,6 +65,8 @@ class MoviesResponse(BaseModel):
                         "Year": "1994",
                         "imdbID": "tt0111161",
                         "Type": "movie",
+                        "Director": "Frank Darabont",
+                        "Genre": "Drama",
                         "Poster": "https://m.media-amazon.com/images/M/..."
                     }
                 ]
@@ -81,7 +87,8 @@ class MovieDetailsResponse(BaseModel):
                     "Title": "The Shawshank Redemption",
                     "Year": "1994",
                     "imdbID": "tt0111161",
-                    "Type": "movie", 
+                    "Type": "movie",
+                    "Director": "Frank Darabont", 
                     "Poster": "https://m.media-amazon.com/images/M/...",
                     "Genre": "Drama",
                     "imdbRating": "9.3"
@@ -105,6 +112,7 @@ class MoviesWithInfoResponse(BaseModel):
                         "Year": "1994",
                         "imdbID": "tt0111161",
                         "Type": "movie",
+                        "Director": "Frank Darabont",
                         "Poster": "https://m.media-amazon.com/images/M/...",
                         "Genre": "Drama",
                         "imdbRating": "9.3"
@@ -160,10 +168,6 @@ router.get(
     responses={
         200: {"description": "Service is up and running", "model": BaseResponse},
         405: {"description": "The HTTP method is not allowed for this endpoint", "model": BaseResponse},
-        422: {
-            "model": ErrorResponse,
-            "description": "Validation Error"
-        },
         500: {"description": "Internal server error", "model": BaseResponse}
     }
 )(health_check)
