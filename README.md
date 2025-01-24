@@ -33,7 +33,7 @@ After installing Docker and Docker Compose, you can run the following command to
 ```bash
 docker-compose up --build
 ```
-This command will build the images and start the containers for the frontend, backend, and database.
+This command will build the images and start the necessary containers for the application.
 
 After the containers are up and running, you can access the frontend by going to [http://localhost](http://localhost) (on port 80) on your browser.
 
