@@ -1,5 +1,6 @@
 import asyncio
 from functools import partial
+import json
 from typing import Any, Dict
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.responses import JSONResponse
@@ -65,12 +66,20 @@ async def fetch_movie_services(omdb_data: dict, movie_id: str, settings: Setting
 
 def process_service_results(omdb_data: dict, results: list) -> dict:
     """Process and combine results from all movie services."""
+    def extract_result(result):
+        if isinstance(result, JSONResponse):
+            content = result.body.decode()
+            return json.loads(content).get('data')
+        if isinstance(result, Exception):
+            return None
+        return result
+
     return {
         "omdb": omdb_data,
-        "youtube": results[0] if not isinstance(results[0], Exception) else None,
-        "spotify": results[1] if not isinstance(results[1], Exception) else None,
-        "streaming": results[2] if not isinstance(results[2], Exception) else None,
-        "trivia": results[3] if not isinstance(results[3], Exception) else None
+        "youtube": extract_result(results[0]),
+        "spotify": extract_result(results[1]),
+        "streaming": extract_result(results[2]),
+        "trivia": extract_result(results[3])
     }
 
 def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:

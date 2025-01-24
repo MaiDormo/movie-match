@@ -19,18 +19,24 @@ async function fetchMovieDetails(movieId) {
             throw new Error(data.message || 'Failed to fetch movie details');
         }
 
-        if (data.status === 'fail') {
+        if (data.status === 'fail' || !data.data?.movie_details) {
             throw new Error(data.message || 'Movie not found');
         }
 
-        // Update movie details
-        updateMovieInfo(data.data.movie_details.omdb);
+        const movieDetails = data.data.movie_details;
 
-        // Update additional content
-        updateYouTubeTrailer(data.data.movie_details.youtube);
-        updateSpotifyPlaylist(data.data.movie_details.spotify);
-        updateStreamingAvailability(data.data.movie_details.streaming);
-        updateTrivia(data.data.movie_details.trivia);
+        // Update movie details with null checks
+        updateMovieInfo(movieDetails.omdb || {});
+
+        // Update additional content with null checks
+        if (movieDetails.youtube?.data?.embed_url) {
+            updateYouTubeTrailer(movieDetails.youtube);
+        }
+        updateSpotifyPlaylist(movieDetails.spotify);
+        updateStreamingAvailability(movieDetails.streaming);
+        if (movieDetails.trivia?.ai_question) {
+            updateTrivia(movieDetails.trivia);
+        }
 
     } catch (error) {
         console.error('Error fetching movie details:', error);
@@ -76,9 +82,25 @@ function updateYouTubeTrailer(youtubeData) {
 
 function updateSpotifyPlaylist(spotifyData) {
     const spotifyContainer = document.getElementById("spotify-container");
-    document.getElementById("spotify-cover").src = spotifyData.data.cover_url;
-    document.getElementById("playlist-title").textContent = spotifyData.data.name;
-    spotifyContainer.dataset.link = spotifyData.data.spotify_url;
+    const coverImg = document.getElementById("spotify-cover");
+    const titleElement = document.getElementById("playlist-title");
+    const descElement = document.getElementById("playlist-description");
+    
+    if (!spotifyData || !spotifyData.data) {
+        coverImg.style.display = "none"; 
+        titleElement.textContent = "No playlist available";
+        descElement.textContent = "No playlist found for this movie";
+        spotifyContainer.style.cursor = 'default';
+        spotifyContainer.onclick = null;
+        return;
+    }
+
+    coverImg.style.display = "block";
+    coverImg.src = spotifyData.data.cover_url || '/static/images/Spotify_Primary_Logo_RGB_White.png';
+    titleElement.textContent = spotifyData.data.name;
+    descElement.textContent = "Listen on Spotify";
+    spotifyContainer.style.cursor = 'pointer';
+    spotifyContainer.onclick = () => window.open(spotifyData.data.spotify_url, '_blank');
 }
 
 function updateStreamingAvailability(streamingData) {
