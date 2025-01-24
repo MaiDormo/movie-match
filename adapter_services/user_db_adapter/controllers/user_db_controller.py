@@ -145,7 +145,7 @@ async def find_user(
     if not user:
         return create_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            message=f"User with ID {id} not found"
+            message=f"User not found"
         )
     
     return create_response(

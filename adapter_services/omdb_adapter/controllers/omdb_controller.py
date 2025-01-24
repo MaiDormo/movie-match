@@ -63,7 +63,7 @@ def make_request(url: str, params: Dict[str, str]) -> Dict[str, Any]:
     if 'Error' in data:
         return create_response(
             status_code=status.HTTP_404_NOT_FOUND,
-            message=data
+            message=data["Error"],
         )
     return data
 

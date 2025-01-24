@@ -3,9 +3,6 @@ x-common-service: &common-service
   restart: unless-stopped
   env_file:
     - .env
-
-x-adapter-service: &adapter-service
-  <<: *common-service
   networks:
     - movie-match-network
 
@@ -21,10 +18,9 @@ x-health-check: &health-check
 services:
   # External API Adapters
   omdb-adapter:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./adapter_services/omdb_adapter
-      dockerfile: Dockerfile
     container_name: omdb-adapter
     ports:
       - "5001:5000"
@@ -34,7 +30,7 @@ services:
       - ./adapter_services/omdb_adapter:/omdb_adapter
   
   streaming-availability-adapter:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./adapter_services/streaming_availability_adapter
     container_name: streaming-availability-adapter
@@ -46,7 +42,7 @@ services:
       - ./adapter_services/streaming_availability_adapter:/streaming_availability_adapter
     
   tmdb-adapter:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./adapter_services/tmdb_adapter
     container_name: tmdb-adapter
@@ -58,7 +54,7 @@ services:
       - ./adapter_services/tmdb_adapter:/tmdb_adapter
      
   spotify-adapter:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./adapter_services/spotify_adapter
     container_name: spotify-adapter
@@ -71,7 +67,7 @@ services:
       - ./adapter_services/spotify_adapter:/spotify_adapter
 
   groq-adapter:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./adapter_services/groq_adapter
     container_name: groq-adapter
@@ -83,7 +79,7 @@ services:
       - ./adapter_services/groq_adapter:/groq_adapter
 
   youtube-adapter:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./adapter_services/youtube_adapter
     container_name: youtube-adapter
@@ -96,7 +92,7 @@ services:
 
   # Database Adapters
   user-db-adapter:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./adapter_services/user_db_adapter
     container_name: user-db-adapter
@@ -109,7 +105,7 @@ services:
       - ./adapter_services/user_db_adapter:/user_db_adapter
 
   genres-db-adapter:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./adapter_services/genres_db_adapter
     container_name: genres-db-adapter
@@ -123,7 +119,7 @@ services:
 
   # Email Services
   email-check-adapter:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./adapter_services/email_check_adapter
     container_name: email-check-adapter
@@ -134,8 +130,9 @@ services:
     volumes:
       - ./adapter_services/email_check_adapter:/email_check_adapter
 
+  # Business Logic Services
   movie-details-service:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./business_logic_services/movie_details_service
     container_name: movie-details-service
@@ -145,7 +142,7 @@ services:
       - ./business_logic_services/movie_details_service:/movie_details_service
 
   movie-search-service:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./business_logic_services/movie_search_service
     container_name: movie-search-service
@@ -154,9 +151,8 @@ services:
     volumes:
       - ./business_logic_services/movie_search_service:/movie_search_service
 
-  # Business Logic Services
   valid-email-service:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./business_logic_services/valid_email_service
     container_name: valid-email-service
@@ -164,14 +160,10 @@ services:
       - "5012:5000"
     volumes:
       - ./business_logic_services/valid_email_service:/valid_email_service
-    #depends_on:
-      # email-check-adapter:
-      #   condition: service_healthy
-      #- email-check-adapter
 
   # Process Centric Services
   user-registration-service:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./process_centric_services/user_registration_service
     container_name: user-registration-service
@@ -179,16 +171,9 @@ services:
       - "5013:5000"
     volumes:
       - ./process_centric_services/user_registration_service:/user_registration_service
-    #depends_on:
-      # valid-email-service:
-      #   condition: service_healthy
-      # user-db-adapter:
-      #   condition: service_healthy
-      #- valid-email-service
-      #- user-db-adapter
   
   user-login-service:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./process_centric_services/user_login_service
     container_name: user-login-service
@@ -196,18 +181,13 @@ services:
       - "5014:5000"
     volumes:
       - ./process_centric_services/user_login_service:/user_login_service
-    # depends_on:
-      # user-db-adapter:
-      #   condition: service_healthy
-      #- user-db-adapter
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
 
-
   movie-match-service:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./process_centric_services/movie_match_service
     container_name: movie-match-service
@@ -215,11 +195,10 @@ services:
       - "5017:5000"
     volumes:
       - ./process_centric_services/movie_match_service:/movie_match_service
-    #depends_on:
 
   # Frontend Services
   frontend:
-    <<: [*adapter-service, *health-check]
+    <<: [*common-service, *health-check]
     build:
       context: ./frontend/
     container_name: frontend
@@ -227,26 +206,6 @@ services:
       - "5006:5000"
     volumes:
       - ./frontend:/frontend
-    # depends_on:
-      # omdb-adapter:
-      #   condition: service_healthy
-      # streaming-availability-adapter:
-      #   condition: service_healthy
-      # spotify-adapter:
-      #   condition: service_healthy
-      # youtube-adapter:
-      #   condition: service_healthy
-      # user-login-service:
-      #   condition: service_healthy
-      # user-registration-service:
-      #   condition: service_healthy
-      # - omdb-adapter
-      # - streaming-availability-adapter
-      # - spotify-adapter
-      # - youtube-adapter
-      # - user-login-service
-      # - user-registration-service
-      # - genres-db-adapter
 
 # Networks
 networks:

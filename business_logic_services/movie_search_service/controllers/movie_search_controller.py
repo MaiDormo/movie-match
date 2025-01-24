@@ -27,20 +27,8 @@ def get_settings() -> Settings:
     """
     return Settings()
 
-async def fetch_data(url: str, method: str = "GET", params: dict = None) -> Dict[str, Any]:
-    """
-    Generic function to fetch data from external services.
-    """
-    async with httpx.AsyncClient() as client:
-        if method == "PUT":
-            response = await client.put(url, json=params)
-        else:
-            response = await client.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
-    
 async def fetch_data(url: str, method: str = "GET", params: dict = None, settings: Settings = None) -> Dict[str, Any] | None:
-    """Enhanced fetch function with retry logic"""
+    """Generic function to fetch data from external services with retry logic."""
     for attempt in range(settings.max_retries):
         try:
             async with httpx.AsyncClient(timeout=settings.timeout) as client:
@@ -50,12 +38,27 @@ async def fetch_data(url: str, method: str = "GET", params: dict = None, setting
                     response = await client.get(url, params=params)
                 response.raise_for_status()
                 return response.json()
-        except (httpx.ConnectError, httpx.TimeoutException):
+        except httpx.HTTPStatusError as e:
+            try:
+                error_data = e.response.json()
+                return create_response(
+                    status_code=e.response.status_code,
+                    message=error_data.get('message', str(e)),
+                    data=error_data.get('data')
+                )
+            except ValueError:
+                return create_response(
+                    status_code=e.response.status_code,
+                    message=str(e)
+                )
+        except (httpx.ConnectError, httpx.TimeoutException) as e:
             if attempt == settings.max_retries - 1:
-                raise
+                return create_response(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    message="Service temporarily unavailable"
+                )
             await asyncio.sleep(settings.retry_delay)
     return None
-
     
 def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
     """
@@ -81,6 +84,9 @@ async def get_text_movie_search(query: str, settings: Settings = Depends(get_set
     try:
         # Ottieni generi e preferenze in parallelo
         movie_list_data = await fetch_data(url=settings.omdb_url, params={"title": query}, settings=settings)
+
+        if isinstance(movie_list_data, JSONResponse):
+            return movie_list_data
 
         # Risposta di successo
         return create_response(
@@ -115,6 +121,9 @@ async def get_genre_movie_search(
             },
             settings=settings
         )
+
+        if isinstance(movie_list_data, JSONResponse):
+            return movie_list_data
 
         if not movie_list_data or movie_list_data.get("status") != "success":
             return create_response(
@@ -192,6 +201,12 @@ async def get_user_genres(user_id: str, settings: Settings = Depends(get_setting
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 message="USER DATABASE service unavailable"
             )
+        
+        if isinstance(genres_data, JSONResponse):
+            return genres_data
+        
+        if isinstance(preferences_data, JSONResponse):
+            return preferences_data
 
         # Validazione e mapping dei dati
         if "genres" not in genres_data.get("data", {}):
