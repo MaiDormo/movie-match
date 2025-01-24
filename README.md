@@ -15,16 +15,16 @@ This project aims to create a web application that enables users to search for m
 - [Response Structure](#response-structure)
 - [Future Improvements](#future-improvements)
 
-## Endpoints Documentation 📚
+## Endpoints Documentation
 
 Documentation of the endpoints can be found inside the file `docs.json` in the root directory of the project.
 Because of FastAPI automatic documentation, you can also access the documentation by running the project and accessing the `/docs` endpoint for each docker container.
 
-## Architecture Diagram 🏗️
+## Architecture Diagram
 
 <img src="service_architecture.png" alt="architecture"/>
 
-## How to Run 🚀
+## How to Run
 
 To run the application, you need to have Docker and Docker Compose installed on your machine.
 
@@ -37,7 +37,7 @@ This command will build the images and start the necessary containers for the ap
 
 After the containers are up and running, you can access the frontend by going to [http://localhost](http://localhost) (on port 80) on your browser.
 
-## Features 🌟
+## Features
 
 + Suggests movies based on user genre preferences
 + Displays movie details including trailer, spotify playlist, trivia AI generated quiz and streaming availability in your favorite platforms (Netflix, Amazon Prime, Disney+ and HBO Max)
@@ -46,7 +46,7 @@ After the containers are up and running, you can access the frontend by going to
 + Docker Compose used to deploy the multi-container application
 + RESTful API with FastAPI
 
-## Architecture 🏛️
+## Architecture
 
 The architecture is divided into four layers:
 
@@ -57,7 +57,7 @@ The architecture is divided into four layers:
 
 In total, **15 services** were built across the 4 layers. Docker compose is used to define and deploy the multi-container application.
 
-## Technologies 🛠️
+## Technologies
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white) ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 
@@ -67,7 +67,7 @@ In total, **15 services** were built across the 4 layers. Docker compose is used
 
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
 
-## Response structure 📦
+## Response structure
 
 Througout the project, all the responses are structured as follows:
 
@@ -109,7 +109,7 @@ Example of an error response when the IMDb ID is incorrect:
 }
 ```
 
-## Future improvements 🔮
+## Future improvements
 
 + Improving session/token management leveraging sessions.
 + Implementing a movie caching system to improve the performance of the application.
