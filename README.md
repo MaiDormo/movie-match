@@ -17,8 +17,7 @@ This project aims to create a web application that enables users to search for m
 
 ## Endpoints Documentation
 
-Documentation of the endpoints can be found inside the file `docs.json` in the root directory of the project.
-Because of FastAPI automatic documentation, you can also access the documentation by running the project and accessing the `/docs` endpoint for each docker container.
+The endpoint documentation is available in the `docs.json` file located in the root directory of the project. Additionally, thanks to FastAPI's automatic documentation, you can access the documentation by running the project and navigating to the `/docs` endpoint for each Docker container.
 
 ## Architecture Diagram
 
