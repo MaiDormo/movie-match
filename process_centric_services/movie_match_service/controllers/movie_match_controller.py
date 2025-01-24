@@ -29,10 +29,6 @@ def create_response(status_code: int, message: str, data: Dict[str, Any] = None)
 def handle_service_request(method: str, url: str, **kwargs) -> Dict:
     """Handle external service requests with standardized error handling"""
     try:
-        # Log dell'endpoint e dei parametri
-        print(f"Calling endpoint: {url}")
-        print(f"Request method: {method}")
-        print(f"Request parameters: {kwargs}")
 
         if method.lower() == "get":
             response = requests.get(url, **kwargs)
@@ -186,51 +182,47 @@ async def get_user_genres(user_id: str) -> JSONResponse:
         )
     
 
-# async def update_user_genres(
-#     user_id: str,
-#     preferences: list[int]
-# ) -> JSONResponse:
-#     """Update user genres preferences based on user ID."""
-#     try:
-#         print("ciao")
-#         # Costruisci l'URL del servizio
-#         url = MOVIE_SEARCH_SET_GENRES_URL
-#         data = {
-#             "id": user_id,  # Passa l'id nel corpo della richiesta
-#             "preferences": preferences
-#         }
+async def update_user_genres(
+    user_id: str,
+    preferences: list[int]
+) -> JSONResponse:
+    """Update user genres preferences based on user ID."""
+    try:
+        # Costruisci l'URL del servizio
+        url =  f"{MOVIE_SEARCH_SET_GENRES_URL}?id={user_id}"
+        payload = {"preferences": preferences}
 
-#         # Richiesta PUT per aggiornare le preferenze dell'utente
-#         response = handle_service_request(
-#             method="put",
-#             url=url,
-#             json=data
-#         )
+        # Richiesta PUT per aggiornare le preferenze dell'utente
+        response = handle_service_request(
+            method="put",
+            url=url,
+            json=preferences
+        )
 
-#         # Se la risposta contiene un errore, restituisci una risposta con l'errore
-#         if response.get("status") == "error":
-#             return create_response(
-#                 status_code=status.HTTP_400_BAD_REQUEST,
-#                 message=response.get("message", "Failed to update user preferences"),
-#                 data=response.get("data") or {"detail": response.get("detail", "Unknown error")}
-#             )
+        # Se la risposta contiene un errore, restituisci una risposta con l'errore
+        if response.get("status") == "error":
+            return create_response(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                message=response.get("message", "Failed to update user preferences"),
+                data=response.get("data") or {"detail": response.get("detail", "Unknown error")}
+            )
 
-#         # Restituisci una risposta di successo con i dati aggiornati
-#         return create_response(
-#             status_code=status.HTTP_200_OK,
-#             message="User preferences updated successfully",
-#             data=response
-#         )
+        # Restituisci una risposta di successo con i dati aggiornati
+        return create_response(
+            status_code=status.HTTP_200_OK,
+            message="User preferences updated successfully",
+            data=response
+        )
 
-#     except HTTPException as http_err:
-#         raise http_err  # Propaga le eccezioni di FastAPI
+    except HTTPException as http_err:
+        raise http_err  # Propaga le eccezioni di FastAPI
 
-#     except Exception as e:
-#         # Gestisci errori inaspettati
-#         return create_response(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             message=f"An unexpected error occurred: {str(e)}"
-#         )
+    except Exception as e:
+        # Gestisci errori inaspettati
+        return create_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message=f"An unexpected error occurred: {str(e)}"
+        )
 
 async def get_movie_search_by_text(
     query: str 
@@ -289,7 +281,7 @@ async def get_genre_movie_search_by_url(
         params = {
             "language": "en-EN",
             "with_genres": with_genres,
-            "vote_avg_gt": 8.0,
+            "vote_avg_gt": 6.5,
             "sort_by": "popularity.desc"
         }
 

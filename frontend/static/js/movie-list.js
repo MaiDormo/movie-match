@@ -38,7 +38,6 @@ function renderMovies(movieListElement, movies, userGenres = []) {
                 <div class="details">
                     <div><strong>Genre:</strong> ${genreNames}</div>
                     <div><strong>Rating:</strong> ${movie.imdbRating || movie.vote_average || 'N/A'}</div>
-                    <div><strong>Type:</strong> ${movie.Type || 'N/A'}</div>
                     <div><strong>IMDb:</strong> ${movie.imdbID || 'N/A'}</div>
                 </div>
             </div>
@@ -71,7 +70,7 @@ async function loadMovies(query = '') {
     searchButton.disabled = true;
 
     try {
-        const response = await fetch(`http://localhost:5016/api/v1/movie_search_text?query=${encodeURIComponent(searchQuery)}`);
+        const response = await fetch(`http://localhost:5017/api/v1/movies/search-by-text?query=${encodeURIComponent(searchQuery)}`);
         const data_json = await response.json();
 
         if (!response.ok || data_json.status === 'fail') {
@@ -104,7 +103,7 @@ async function discoverMoviesByGenre() {
     searchButton.disabled = true;
 
     try {
-        const userGenres = await fetch(`http://localhost:5016/api/v1/user_genres?user_id=0b8ac00c-a52b-4649-bd75-699b49c00ce3`);
+        const userGenres = await fetch(`http://localhost:5017/api/v1/user-genres?user_id=0b8ac00c-a52b-4649-bd75-699b49c00ce3`);
         const genresData = await userGenres.json();
         console.log('User genres:', userGenres);
 
@@ -120,7 +119,7 @@ async function discoverMoviesByGenre() {
             return;
         }
 
-        const response = await fetch(`http://localhost:5016/api/v1/movie_search_genre?language=en-EN&with_genres=${preferredGenres}&vote_avg_gt=7.0&sort_by=popularity.desc`);
+        const response = await fetch(`http://localhost:5017/api/v1/movies/search-by-genre?with_genres=${preferredGenres}`);
         const data = await response.json();
 
         spinner.style.display = 'none';
@@ -154,7 +153,7 @@ async function createGenres(userId) {
 
     try {
 
-        const response = await fetch(`http://localhost:5016/api/v1/user_genres?user_id=${userId}`);
+        const response = await fetch(`http://localhost:5017/api/v1/user-genres?user_id=${userId}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -208,13 +207,14 @@ async function createGenres(userId) {
 
 async function updateUserPreferences(userId, preferences) {
     try {
-        const response = await fetch(`http://localhost:5010/api/v1/user?id=${userId}`, {
+        console.log("Preferences:", preferences);
+        const response = await fetch(`http://localhost:5017/api/v1/user-genres/update?user_id=${userId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ preferences })
+            body: JSON.stringify(preferences )
         });
 
         const data = await response.json();
