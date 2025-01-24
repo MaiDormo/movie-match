@@ -99,7 +99,7 @@ Example of a successfull response, when retrieving movie details:
 }
 ```
 
-Example of an error response when the IMDb ID is incorrect:
+Example of an error response when the IMDB ID is incorrect:
 
 ```json
 {
