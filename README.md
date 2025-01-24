@@ -77,7 +77,6 @@ Througout the project, all the responses are structured as follows:
     "message": "A brief message about the response",
     "data": { 
         "key": "value",
-        ...
     } 
 }
 ```
