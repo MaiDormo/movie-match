@@ -88,6 +88,9 @@ async def get_text_movie_search(query: str, settings: Settings = Depends(get_set
         if isinstance(movie_list_data, JSONResponse):
             return movie_list_data
 
+        # Ordina i film per valutazione
+        movie_list_data.get("data").sort(key=lambda x: x["imdbRating"], reverse=True)
+
         # Risposta di successo
         return create_response(
             status_code=status.HTTP_200_OK,
@@ -160,6 +163,9 @@ async def get_genre_movie_search(
             except Exception as e:
                 # Logga eventuali errori per film specifici e continua
                 print(f"Error fetching details for movie ID {movie_id}: {e}")
+
+        # Ordina i film per valutazione
+        movie_details.sort(key=lambda x: x["imdbRating"], reverse=True)
 
         # Risposta di successo con i dettagli dei film
         return create_response(
