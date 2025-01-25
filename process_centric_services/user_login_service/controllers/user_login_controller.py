@@ -1,24 +1,31 @@
-from fastapi import Depends, status
+from fastapi import Depends, status, Query, Body
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from passlib.context import CryptContext
 from typing import Annotated, Optional, Dict, Any
+from pydantic import Field
 import requests
 import jwt
 from datetime import datetime, timedelta
 import pytz
 from schemas.user_login_schemas import *
 
-# Constants
-USER_DB_ADAPTER = "http://user-db-adapter:5000/api/v1/user-email"
-PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
-OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl="login")
+class AuthConfig:
+    """Authentication configuration and constants"""
+    USER_DB_ADAPTER = "http://user-db-adapter:5000/api/v1/user-email"
+    PWD_CONTEXT = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    OAUTH2_SCHEME = OAuth2PasswordBearer(tokenUrl="login")
+    REQUEST_TIMEOUT = 10
 
 def get_settings() -> Settings:
     """Get application settings."""
     return Settings()
 
-def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+def create_response(
+    status_code: int = Field(..., description="HTTP status code for the response"),
+    message: str = Field(..., description="Response message"),
+    data: Dict[str, Any] = Field(None, description="Optional response data")
+) -> JSONResponse:
     """Create a standardized API response"""
     content = {
         "status": "success" if status_code < 400 else "error",
@@ -35,8 +42,21 @@ async def health_check() -> JSONResponse:
         message="User Login Service is up and running!"
     )
 
-def verify_token(token: str, settings: Settings = Depends(get_settings)) -> str:
-    """Verify JWT token and return email."""
+def verify_token(
+    token: str = Field(..., description="JWT token to verify"), 
+    settings: Settings = Depends(get_settings)
+) -> str:
+    """
+    Verify JWT token and return email.
+
+    Args:
+        token: JWT token string
+        settings: Application settings containing JWT configuration
+
+    Returns:
+        str: Email address from token if valid
+        JSONResponse: Error response if token is invalid
+    """
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         if email := payload.get("sub"):
@@ -57,9 +77,12 @@ def verify_token(token: str, settings: Settings = Depends(get_settings)) -> str:
         )
 
 def create_access_token(
-    data: Dict[str, Any], 
-    settings: Settings, 
-    expires_delta: Optional[timedelta] = None
+    data: Dict[str, Any] = Field(..., description="Data to encode in the token"),
+    settings: Settings = Field(..., description="Application settings"),
+    expires_delta: Optional[timedelta] = Field(
+        None, 
+        description="Token expiration time. Defaults to 15 minutes if not provided"
+    )
 ) -> str:
     """Create a new JWT access token."""
     to_encode = data.copy()
@@ -73,13 +96,24 @@ def create_access_token(
             message=f"Error creating access token: {str(e)}"
         )
 
-async def validate_credentials(email: str, password: str) -> Dict[str, Any]:
+async def validate_credentials(
+    email: str = Query(
+        ..., 
+        description="User's email address",
+        example="user@example.com"
+    ),
+    password: str = Query(
+        ..., 
+        description="User's password",
+        min_length=8
+    )
+) -> Dict[str, Any]:
     """Validate user credentials against the database."""
     try:
         response = requests.get(
-            USER_DB_ADAPTER, 
+            AuthConfig.USER_DB_ADAPTER, 
             params={"email": email}, 
-            timeout=10
+            timeout=AuthConfig.REQUEST_TIMEOUT
         )
         response.raise_for_status()
         return response.json()
@@ -105,39 +139,43 @@ async def validate_credentials(email: str, password: str) -> Dict[str, Any]:
         )
 
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), 
+    form_data: Annotated[
+        OAuth2PasswordRequestForm,
+        Body(
+            ...,
+            description="Login form data containing username (email) and password",
+            example={
+                "username": "user@example.com",
+                "password": "securepassword123"
+            }
+        )
+    ] = Depends(),
     settings: Settings = Depends(get_settings)
 ) -> JSONResponse:
     """Handle user login and return access token."""
-    # Validate input
     if not form_data.username or not form_data.password:
         return create_response(
             status_code=status.HTTP_400_BAD_REQUEST,
             message="Email and password are required",
         )
 
-    # Validate credentials
     user_data = await validate_credentials(form_data.username, form_data.password)
 
-    # Check if validation failed
     if isinstance(user_data, JSONResponse):
         return user_data
 
-    # Verify password
-    if not PWD_CONTEXT.verify(form_data.password, user_data["data"]["password"]):
+    if not AuthConfig.PWD_CONTEXT.verify(form_data.password, user_data["data"]["password"]):
         return create_response(
             status_code=status.HTTP_400_BAD_REQUEST,
             message="Invalid password",
         )
 
-    # Create access token
     access_token = create_access_token(
         data={"sub": form_data.username},
         settings=settings,
         expires_delta=timedelta(minutes=settings.access_token_expire_minutes)
     )
 
-    # Return success response
     return create_response(
         status_code=status.HTTP_200_OK,
         message="Login successful",
@@ -148,10 +186,23 @@ async def login(
     )
 
 async def refresh_token(
-    token: Annotated[str, Depends(OAUTH2_SCHEME)],
+    token: Annotated[
+        str, 
+        Depends(AuthConfig.OAUTH2_SCHEME),
+        Field(..., description="Current valid JWT token")
+    ],
     settings: Settings = Depends(get_settings)
 ) -> JSONResponse:
-    """Refresh an existing access token."""
+    """
+    Refresh an existing access token.
+    
+    Args:
+        token: Current valid JWT token
+        settings: Application settings containing JWT configuration
+
+    Returns:
+        JSONResponse: New access token if successful, error response otherwise
+    """
     try:
         email = verify_token(token, settings)
         new_access_token = create_access_token(

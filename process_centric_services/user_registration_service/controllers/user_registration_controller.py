@@ -1,12 +1,16 @@
 import requests
-from fastapi import Body, HTTPException, status
+from fastapi import Body, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from typing import Dict, Any
 from models.user_registration_model import UserRegistration
 
 # Service endpoints
-VALID_CHECK_SERVICE_URL = "http://valid-email-service:5000/api/v1/validate-email"
-USER_DB_ADAPTER_URL = "http://user-db-adapter:5000/api/v1/user"
+class Settings:
+    VALID_CHECK_SERVICE_URL: str = "http://valid-email-service:5000/api/v1/validate-email"
+    USER_DB_ADAPTER_URL: str = "http://user-db-adapter:5000/api/v1/user"
+
+def get_settings():
+    return Settings
 
 def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
     """Create a standardized API response"""
@@ -76,7 +80,20 @@ async def health_check() -> JSONResponse:
         message="User Registration Service is up and running"
     )
 
-async def registrate_user(user: UserRegistration = Body(...)) -> JSONResponse:
+async def registrate_user(
+        user: UserRegistration = Body(
+        ...,
+        description="User registration data",
+        example={
+            "name": "John",
+            "surname": "Doe",
+            "email": "john.doe@example.com",
+            "password": "securepassword123",
+            "password_confirmation": "securepassword123"
+        }
+    ), 
+        settings: Settings = Depends(get_settings)
+) -> JSONResponse:
     """Handle user registration process"""
     try:
         # Validate password match
@@ -89,7 +106,7 @@ async def registrate_user(user: UserRegistration = Body(...)) -> JSONResponse:
         # Validate email
         email_validation = handle_service_request(
             "get",
-            VALID_CHECK_SERVICE_URL,
+            settings.VALID_CHECK_SERVICE_URL,
             params={"email": user.email}
         )
         
@@ -114,7 +131,7 @@ async def registrate_user(user: UserRegistration = Body(...)) -> JSONResponse:
         try:
             db_response = handle_service_request(
                 "post",
-                USER_DB_ADAPTER_URL,
+                settings.USER_DB_ADAPTER_URL,
                 json=user_data
             )
             
