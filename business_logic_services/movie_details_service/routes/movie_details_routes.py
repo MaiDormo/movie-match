@@ -11,15 +11,6 @@ class BaseResponse(BaseModel):
     status: str = Field(..., description="Response status ('success' or 'error')")
     message: str = Field(..., description="Response message")
 
-    class Config:
-        extra = 'forbid'  # Prevents additional fields
-        json_schema_extra = {
-            "example": {
-                "status": "error",
-                "message": "Movie not found"
-            }
-        }
-
 class BaseResponseWithData(BaseModel):
     status: str = Field(..., description="Response status ('success' or 'error')")
     message: str = Field(..., description="Response message")
@@ -154,18 +145,7 @@ router.get(
         },
         500: {
             "description": "Internal server error",
-            "model": BaseResponseWithData,
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status": "error",
-                        "message": "An unexpected error occurred",
-                        "data": {
-                            "error": "get expected at least 1 argument, got 0"
-                        }
-                    }
-                }
-            }
+            "model": BaseResponseWithData
         }
     }
 )(get_movie_details)
