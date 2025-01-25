@@ -146,6 +146,9 @@ async def get_movie_availability(
             status_code=status.HTTP_404_NOT_FOUND,
             message="Streaming availability not found for this movie"
         )
+    
+    if isinstance(result,JSONResponse):
+        return result
 
     return create_response(
         status_code=status.HTTP_200_OK,

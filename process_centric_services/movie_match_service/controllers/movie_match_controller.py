@@ -87,10 +87,11 @@ def handle_service_request(method: str, url: str, **kwargs) -> Dict:
 async def fetch_data_from_service(
     url: str, 
     params: Optional[Dict[str, Any]] = None, 
-    method: str = "get"
+    method: str = "get",
+    json: Optional[Dict[str, Any]] = None
 ) -> JSONResponse:
     try:
-        response_data = handle_service_request(method, url, params=params)
+        response_data = handle_service_request(method, url, params=params, json=json)
         
         if isinstance(response_data, JSONResponse):
             return response_data
@@ -146,7 +147,7 @@ async def update_user_genres(user_id: str, preferences: list[int], settings: Set
     """Update user genres preferences based on user ID."""
     return await fetch_data_from_service(
         f"{settings.MOVIE_SEARCH_SET_GENRES_URL}?id={user_id}", 
-        {"preferences": preferences}, 
+        json=preferences, 
         method="put"
     )
 

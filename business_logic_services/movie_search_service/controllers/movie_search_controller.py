@@ -257,7 +257,7 @@ async def update_user_preferences(
     id: str = Query(
         ...,
         description="Unique identifier of the user whose preferences are to be updated",
-        example="066de609-b04a-4b30-b46c-32537c7f1f6e"
+        example="0b8ac00c-a52b-4649-bd75-699b49c00ce3"
     ),
     preferences: list[int] = Body(
         ...,
