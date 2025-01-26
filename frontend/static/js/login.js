@@ -17,7 +17,7 @@ async function checkExistingToken() {
         if (response.ok) {
             // Update token and redirect to home
             localStorage.setItem('token', data.data.access_token);
-            window.location.href = '/';
+            window.location.href = '/movie-list';
         } else {
             // Token is invalid, remove it
             localStorage.removeItem('token');
@@ -58,7 +58,7 @@ async function handleLogin(event) {
 
         if (response.ok && data.status === 'success') {
             localStorage.setItem('token', data.data.access_token);
-            window.location.href = '/';
+            window.location.href = '/movie-list';
         } else {
             if (data.status === 'error') {
                 if (data.data) {
