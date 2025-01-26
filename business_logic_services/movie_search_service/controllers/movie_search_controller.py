@@ -14,9 +14,9 @@ class Settings(BaseModel):
     tmdb_url: str = "http://tmdb-adapter:5000/api/v1/discover-movies"
     tmdb_movie_url: str = "http://tmdb-adapter:5000/api/v1/movie"
     
-    timeout: float = 10.0
+    timeout: float = 15.0
     max_retries: int = 3
-    retry_delay: float = 1.0
+    retry_delay: float = 1.5
 
 def get_settings() -> Settings:
     """
