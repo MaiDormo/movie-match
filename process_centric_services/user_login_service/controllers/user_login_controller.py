@@ -139,17 +139,7 @@ async def validate_credentials(
         )
 
 async def login(
-    form_data: Annotated[
-        OAuth2PasswordRequestForm,
-        Body(
-            ...,
-            description="Login form data containing username (email) and password",
-            example={
-                "username": "user@example.com",
-                "password": "securepassword123"
-            }
-        )
-    ] = Depends(),
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     settings: Settings = Depends(get_settings)
 ) -> JSONResponse:
     """Handle user login and return access token."""
