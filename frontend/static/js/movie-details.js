@@ -1,3 +1,31 @@
+// Add this at the top of movie-details.js
+const CACHE_CONFIG = {
+    MOVIE_DETAILS_CACHE_KEY: 'movieDetailsCache',
+    CACHE_DURATION: 30 * 60 * 1000 // 30 minutes in milliseconds
+};
+
+const cacheUtils = {
+    set(movieId, data) {
+        const cacheEntry = {
+            timestamp: Date.now(),
+            data: data
+        };
+        localStorage.setItem(`${CACHE_CONFIG.MOVIE_DETAILS_CACHE_KEY}_${movieId}`, JSON.stringify(cacheEntry));
+    },
+
+    get(movieId) {
+        const cached = localStorage.getItem(`${CACHE_CONFIG.MOVIE_DETAILS_CACHE_KEY}_${movieId}`);
+        if (!cached) return null;
+
+        const cacheEntry = JSON.parse(cached);
+        if (Date.now() - cacheEntry.timestamp > CACHE_CONFIG.CACHE_DURATION) {
+            localStorage.removeItem(`${CACHE_CONFIG.MOVIE_DETAILS_CACHE_KEY}_${movieId}`);
+            return null;
+        }
+        return cacheEntry.data;
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const movieId = urlParams.get('id');
@@ -12,6 +40,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function fetchMovieDetails(movieId) {
     try {
+        // Check cache first
+        const cachedDetails = cacheUtils.get(movieId);
+        if (cachedDetails) {
+            updateMovieInfo(cachedDetails.movie_details.omdb || {});
+            if (cachedDetails.movie_details.youtube?.data?.embed_url) {
+                updateYouTubeTrailer(cachedDetails.movie_details.youtube);
+            }
+            updateSpotifyPlaylist(cachedDetails.movie_details.spotify);
+            updateStreamingAvailability(cachedDetails.movie_details.streaming);
+            if (cachedDetails.movie_details.trivia?.ai_question) {
+                updateTrivia(cachedDetails.movie_details.trivia);
+            }
+            return;
+        }
+
         const response = await fetch(`http://localhost:5005/api/v1/movie_details?movie_id=${movieId}`);
         const data = await response.json();
 
@@ -25,10 +68,11 @@ async function fetchMovieDetails(movieId) {
 
         const movieDetails = data.data.movie_details;
 
+        // Cache the results
+        cacheUtils.set(movieId, data.data);
+
         // Update movie details with null checks
         updateMovieInfo(movieDetails.omdb || {});
-
-        // Update additional content with null checks
         if (movieDetails.youtube?.data?.embed_url) {
             updateYouTubeTrailer(movieDetails.youtube);
         }

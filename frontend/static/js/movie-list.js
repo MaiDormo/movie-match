@@ -1,3 +1,38 @@
+// Cache configuration
+const CACHE_CONFIG = {
+    MOVIES_CACHE_KEY: 'moviesCache',
+    GENRES_CACHE_KEY: 'genresCache',
+    CACHE_DURATION: 30 * 60 * 1000 // 30 minutes in milliseconds
+};
+
+// Cache utility functions
+const cacheUtils = {
+    set(key, data) {
+        const cacheEntry = {
+            timestamp: Date.now(),
+            data: data
+        };
+        localStorage.setItem(key, JSON.stringify(cacheEntry));
+    },
+
+    get(key) {
+        const cached = localStorage.getItem(key);
+        if (!cached) return null;
+
+        const cacheEntry = JSON.parse(cached);
+        if (Date.now() - cacheEntry.timestamp > CACHE_CONFIG.CACHE_DURATION) {
+            localStorage.removeItem(key);
+            return null;
+        }
+        return cacheEntry.data;
+    },
+
+    getCacheKey(type, query) {
+        return `${type}_${query}`;
+    }
+};
+
+
 // Funzione per ricostruire la lista dei film nel div
 function renderMovies(movieListElement, movies, userGenres = []) {
     // Salva lo spinner prima di resettare il contenuto
@@ -7,8 +42,6 @@ function renderMovies(movieListElement, movies, userGenres = []) {
     
     movieListElement.innerHTML = ''; // Resetta il contenuto del div
     movieListElement.appendChild(spinner); // Reinserisce lo spinner
-    
-    console.log('Total movies to render:', movies.length);
     
     movies.forEach((movie, index) => {
         // console.log(`Rendering movie ${index + 1}:`, {
@@ -51,7 +84,6 @@ function renderMovies(movieListElement, movies, userGenres = []) {
     });
 }
 
-// Funzione per caricare film tramite titolo
 async function loadMovies(query = '') {
     const movieList = document.getElementById('movie-list');
     const spinner = document.getElementById('loading-spinner');
@@ -65,7 +97,15 @@ async function loadMovies(query = '') {
         return;
     }
 
-    // Non svuotare completamente movieList, gestisci solo la visibilità dello spinner
+    // Check cache first
+    const cacheKey = cacheUtils.getCacheKey(CACHE_CONFIG.MOVIES_CACHE_KEY, searchQuery);
+    const cachedMovies = cacheUtils.get(cacheKey);
+    
+    if (cachedMovies) {
+        renderMovies(movieList, cachedMovies);
+        return;
+    }
+
     spinner.style.display = 'block';
     searchButton.disabled = true;
 
@@ -77,18 +117,18 @@ async function loadMovies(query = '') {
             throw new Error(data_json.message || 'Movies not found');
         }
 
-        spinner.style.display = 'none';
-        searchButton.disabled = false;
-
+        // Cache the results
+        cacheUtils.set(cacheKey, data_json.data.movie_list);
         renderMovies(movieList, data_json.data.movie_list);
     } catch (error) {
-        spinner.style.display = 'none';
-        searchButton.disabled = false;
         console.error('Error loading movies:', error);
         movieList.innerHTML = '';
         const errorMessage = document.createElement('div');
         errorMessage.textContent = 'Error loading movies. Please try again.';
         movieList.appendChild(errorMessage);
+    } finally {
+        spinner.style.display = 'none';
+        searchButton.disabled = false;
     }
 }
 
@@ -98,15 +138,13 @@ async function discoverMoviesByGenre() {
     const spinner = document.getElementById('loading-spinner');
     const searchButton = document.getElementById('search-button');
 
-    // Non svuotare completamente movieList, gestisci solo la visibilità dello spinner
     spinner.style.display = 'block';
     searchButton.disabled = true;
 
     try {
         const userGenres = await fetch(`http://localhost:5017/api/v1/user-genres?user_id=0b8ac00c-a52b-4649-bd75-699b49c00ce3`);
         const genresData = await userGenres.json();
-        console.log('User genres:', userGenres);
-
+        
         const preferredGenres = genresData.data.user_genres
             .filter(genre => genre.isPreferred)
             .map(genre => genre.genreId)
@@ -119,6 +157,17 @@ async function discoverMoviesByGenre() {
             return;
         }
 
+        // Check cache first
+        const cacheKey = cacheUtils.getCacheKey(CACHE_CONFIG.MOVIES_CACHE_KEY, `genres_${preferredGenres}`);
+        const cachedMovies = cacheUtils.get(cacheKey);
+        
+        if (cachedMovies) {
+            renderMovies(movieList, cachedMovies, genresData.data.user_genres);
+            spinner.style.display = 'none';
+            searchButton.disabled = false;
+            return;
+        }
+
         const response = await fetch(`http://localhost:5017/api/v1/movies/search-by-genre?with_genres=${preferredGenres}`);
         const data = await response.json();
 
@@ -126,7 +175,9 @@ async function discoverMoviesByGenre() {
         searchButton.disabled = false;
 
         if (data.status === "success" && data.data.movie_list) {
-            renderMovies(movieList, data.data.movie_list, userGenres);
+            // Cache the results
+            cacheUtils.set(cacheKey, data.data.movie_list);
+            renderMovies(movieList, data.data.movie_list, genresData.data.user_genres);
         } else {
             movieList.innerHTML = '';
             const noMoviesMessage = document.createElement('div');
@@ -151,8 +202,16 @@ async function discoverMoviesByGenre() {
 async function createGenres(userId) {
     const genreTagsContainer = document.getElementById('genre-tags');
 
-    try {
+    // Check cache first
+    const cacheKey = cacheUtils.getCacheKey(CACHE_CONFIG.GENRES_CACHE_KEY, userId);
+    const cachedGenres = cacheUtils.get(cacheKey);
 
+    if (cachedGenres) {
+        renderGenreTags(genreTagsContainer, cachedGenres, userId);
+        return;
+    }
+
+    try {
         const response = await fetch(`http://localhost:5017/api/v1/user-genres?user_id=${userId}`);
         const data = await response.json();
 
@@ -164,50 +223,68 @@ async function createGenres(userId) {
             throw new Error(data.message || 'Genres not found');
         }
 
-        // Estrarre i generi dall'oggetto JSON
         const userGenres = data.data.user_genres;
-
-        genreTagsContainer.innerHTML = '';
-
-        userGenres.forEach(genre => {
-            const tag = document.createElement('div');
-            tag.classList.add('genre-tag');
-            tag.textContent = genre.name;
-
-            if (genre.isPreferred) {
-                tag.classList.add('selected');
-            }
-
-            tag.onclick = () => {
-                tag.classList.toggle('selected');
-            };
-
-            genreTagsContainer.appendChild(tag);
-        });
-
-        const confirmButton = document.getElementById('confirm-button');
-        confirmButton.onclick = () => {
-            const selectedGenres = Array.from(document.querySelectorAll('.genre-tag.selected'))
-                .map(tag => {
-                    const genre = userGenres.find(g => g.name === tag.textContent);
-                    return genre ? genre.genreId : null;
-                })
-                .filter(genreId => genreId !== null);
-
-            if (selectedGenres.length > 0) {
-                updateUserPreferences(userId, selectedGenres);
-            } else {
-                alert('No genres selected!');
-            }
-        };
+        
+        // Cache the results
+        cacheUtils.set(cacheKey, userGenres);
+        renderGenreTags(genreTagsContainer, userGenres, userId);
     } catch (error) {
         console.error('Error creating genre tags:', error);
     }
 }
 
+function renderGenreTags(container, genres, userId) {
+    container.innerHTML = '';
+
+    genres.forEach(genre => {
+        const tag = document.createElement('div');
+        tag.classList.add('genre-tag');
+        tag.textContent = genre.name;
+
+        if (genre.isPreferred) {
+            tag.classList.add('selected');
+        }
+
+        tag.onclick = () => {
+            tag.classList.toggle('selected');
+        };
+
+        container.appendChild(tag);
+    });
+
+    setupConfirmButton(genres, userId);
+}
+
+// Helper function to setup confirm button
+function setupConfirmButton(genres, userId) {
+    const confirmButton = document.getElementById('confirm-button');
+    if (!confirmButton) return;
+
+    confirmButton.onclick = () => {
+        const selectedGenres = Array.from(document.querySelectorAll('.genre-tag.selected'))
+            .map(tag => {
+                const genre = genres.find(g => g.name === tag.textContent);
+                return genre ? genre.genreId : null;
+            })
+            .filter(genreId => genreId !== null);
+
+        if (selectedGenres.length > 0) {
+            updateUserPreferences(userId, selectedGenres);
+            // Update cache after preferences change
+            const cacheKey = cacheUtils.getCacheKey(CACHE_CONFIG.GENRES_CACHE_KEY, userId);
+            const updatedGenres = genres.map(g => ({
+                ...g,
+                isPreferred: selectedGenres.includes(g.genreId)
+            }));
+            cacheUtils.set(cacheKey, updatedGenres);
+        } else {
+            alert('No genres selected!');
+        }
+    };
+}
+
 async function updateUserPreferences(userId, preferences) {
     try {
-        console.log("Preferences:", preferences);
         const response = await fetch(`http://localhost:5017/api/v1/user-genres/update?user_id=${userId}`, {
             method: 'PUT',
             headers: {
