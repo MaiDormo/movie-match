@@ -1,5 +1,5 @@
 import json
-from fastapi import Depends, Query, HTTPException, status
+from fastapi import Depends, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import os
@@ -66,30 +66,6 @@ def make_request(url: str, params: Dict[str, str]) -> Dict[str, Any]:
             message=data["Error"],
         )
     return data
-
-@handle_api_errors
-async def get_movies(
-    title: str = Query(..., description="Movie title to search for"),
-    settings: Settings = Depends(get_settings)
-) -> JSONResponse:
-    """Search movies by title"""
-    params = {
-        "apikey": settings.omdb_api_key,
-        "s": title,
-        "type": "movie"
-    }
-    
-    movies = make_request(settings.omdb_url, params)
-
-    # If make_request returned a JSONResponse (error case), return it directly
-    if isinstance(movies, JSONResponse):
-        return movies
-    
-    return create_response(
-        status_code=status.HTTP_200_OK,
-        message="Movies retrieved successfully",
-        data=movies
-    )
 
 @handle_api_errors
 async def get_movie_id(

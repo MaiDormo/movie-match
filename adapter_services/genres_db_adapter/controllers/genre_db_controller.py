@@ -141,6 +141,16 @@ async def update_genre(
                 message="No changes requested"
             )
 
+        # Check for ID conflicts if genreId is being updated
+        if "genreId" in update_data:
+            new_id = update_data["genreId"]
+            existing = genres_collection.find_one({"genreId": new_id})
+            if existing and existing["genreId"] != id:
+                raise create_response(
+                    status_code=status.HTTP_409_CONFLICT,
+                    message=f"Genre with ID {new_id} already exists"
+                )
+
         result = genres_collection.update_one(
             {"genreId": id},
             {"$set": update_data}

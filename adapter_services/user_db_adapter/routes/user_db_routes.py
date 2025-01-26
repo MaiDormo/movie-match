@@ -94,9 +94,39 @@ router.get(
     summary="Health Check",
     description="Check if the User DB API adapter service is running",
     responses={
-        200: {"description": "Service is running", "model": BaseResponse},
-        405: {"description": "Method not allowed", "model": BaseResponse},
-        500: {"description": "Internal server error", "model": BaseResponse}
+        200: {
+            "description": "Service is running",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "success",
+                        "message": "User DB API adapter is up and running"
+                    }
+                }
+            }
+        },
+        405: {
+            "description": "Method not allowed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Method not allowed"
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Internal server error occurred"
+                    }
+                }
+            }
+        }
     }
 )(health_check)
 
@@ -107,11 +137,87 @@ router.post(
     summary="Create User",
     description="Create a new user in the database",
     responses={
-        201: {"description": "User created successfully", "model": UserResponse},
-        400: {"description": "Email already registered", "model": BaseResponse},
-        422: {"description": "Validation error", "model": ErrorResponse},
-        500: {"description": "Internal server error", "model": BaseResponse},
-        503: {"description": "Database connection error", "model": BaseResponse}
+        201: {
+            "description": "User created successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "success",
+                        "message": "User created successfully",
+                        "data": {
+                            "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+                            "name": "John",
+                            "surname": "Doe",
+                            "email": "john.doe@example.com",
+                            "preferences": [28, 35]
+                        }
+                    }
+                }
+            }
+        },
+        400: {
+            "description": "Email already registered",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Email already registered"
+                    }
+                }
+            }
+        },
+        405: {
+            "description": "Method not allowed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Method not allowed"
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Validation error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "code": 422,
+                        "message": "Request validation failed",
+                        "details": [
+                            {
+                                "field": "body -> email",
+                                "message": "field required",
+                                "type": "missing"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Internal server error occurred"
+                    }
+                }
+            }
+        },
+        503: {
+            "description": "Database connection error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Database connection error"
+                    }
+                }
+            }
+        }
     }
 )(create_user)
 
@@ -121,10 +227,88 @@ router.get(
     summary="List Users",
     description="Get list of all users with pagination",
     responses={
-        200: {"description": "Users retrieved successfully", "model": UsersListResponse},
-        422: {"description": "Validation error", "model": ErrorResponse},
-        500: {"description": "Internal server error", "model": BaseResponse},
-        503: {"description": "Database connection error", "model": BaseResponse}
+        200: {
+            "description": "Users retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "success",
+                        "message": "Users retrieved successfully",
+                        "data": {
+                            "total": 2,
+                            "users": [
+                                {
+                                    "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+                                    "name": "John",
+                                    "surname": "Doe",
+                                    "email": "john.doe@example.com",
+                                    "preferences": [28, 35]
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "No users found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "No users found"
+                    }
+                }
+            }
+        },
+        405: {
+            "description": "Method not allowed",
+            "content": {
+                "application/json": {
+                }
+            }
+        },
+        422: {
+            "description": "Validation error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "code": 422,
+                        "message": "Request validation failed",
+                        "details": [
+                            {
+                                "field": "query -> page",
+                                "message": "field required",
+                                "type": "missing"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Internal server error occurred"
+                    }
+                }
+            }
+        },
+        503: {
+            "description": "Database connection error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Database connection error"
+                    }
+                }
+            }
+        }
     }
 )(list_users)
 
@@ -134,11 +318,76 @@ router.get(
     summary="Get User",
     description="Get a specific user by ID",
     responses={
-        200: {"description": "User retrieved successfully", "model": UserResponse},
-        404: {"description": "User not found", "model": BaseResponse},
-        422: {"description": "Validation error", "model": ErrorResponse},
-        500: {"description": "Internal server error", "model": BaseResponse},
-        503: {"description": "Database connection error", "model": BaseResponse}
+        200: {
+            "description": "User retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "success",
+                        "message": "User retrieved successfully",
+                        "data": {
+                            "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+                            "name": "John",
+                            "surname": "Doe",
+                            "email": "john.doe@example.com",
+                            "preferences": [28, 35]
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "User not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "User not found"
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Validation error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "code": 422,
+                        "message": "Request validation failed",
+                        "details": [
+                            {
+                                "field": "query -> id",
+                                "message": "field required",
+                                "type": "missing"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error", 
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Internal server error occurred"
+                    }
+                }
+            }
+        },
+        503: {
+            "description": "Database connection error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Database connection error"
+                    }
+                }
+            }
+        }
     }
 )(find_user)
 
@@ -148,11 +397,76 @@ router.get(
     summary="Get User by Email",
     description="Get a specific user by email address",
     responses={
-        200: {"description": "User retrieved successfully", "model": UserResponse},
-        404: {"description": "User not found", "model": BaseResponse},
-        422: {"description": "Validation error", "model": ErrorResponse},
-        500: {"description": "Internal server error", "model": BaseResponse},
-        503: {"description": "Database connection error", "model": BaseResponse}
+        200: {
+            "description": "User retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "success",
+                        "message": "User retrieved successfully",
+                        "data": {
+                            "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+                            "name": "John",
+                            "surname": "Doe",
+                            "email": "john.doe@example.com",
+                            "preferences": [28, 35]
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "User not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "User not found"
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Validation error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "code": 422,
+                        "message": "Request validation failed",
+                        "details": [
+                            {
+                                "field": "query -> email",
+                                "message": "field required",
+                                "type": "missing"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Internal server error occurred"
+                    }
+                }
+            }
+        },
+        503: {
+            "description": "Database connection error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Database connection error"
+                    }
+                }
+            }
+        }
     }
 )(find_user_by_email)
 
@@ -162,24 +476,151 @@ router.put(
     summary="Update User",
     description="Update an existing user by ID",
     responses={
-        200: {"description": "User updated successfully", "model": UserResponse},
-        404: {"description": "User not found", "model": BaseResponse},
-        422: {"description": "Validation error", "model": ErrorResponse},
-        500: {"description": "Internal server error", "model": BaseResponse},
-        503: {"description": "Database connection error", "model": BaseResponse}
+        200: {
+            "description": "User updated successfully or no changes needed",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "updated": {
+                            "summary": "User updated",
+                            "value": {
+                                "status": "success",
+                                "message": "User updated successfully",
+                                "data": {
+                                    "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+                                    "name": "John",
+                                    "surname": "Doe",
+                                    "email": "john.updated@example.com",
+                                    "preferences": [28, 35, 12]
+                                }
+                            }
+                        },
+                        "no_changes": {
+                            "summary": "No changes needed",
+                            "value": {
+                                "status": "success",
+                                "message": "No changes requested"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "User not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "User not found"
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Validation error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "code": 422,
+                        "message": "Request validation failed",
+                        "details": [
+                            {
+                                "field": "query -> id",
+                                "message": "field required",
+                                "type": "missing"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Internal server error occurred"
+                    }
+                }
+            }
+        },
+        503: {
+            "description": "Database connection error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Database connection error"
+                    }
+                }
+            }
+        }
     }
 )(update_user)
 
 router.delete(
     "/api/v1/user",
     status_code=204,
-    summary="Delete User",
+    summary="Delete User", 
     description="Delete a user by ID",
     responses={
-        204: {"description": "User deleted successfully"},
-        404: {"description": "User not found", "model": BaseResponse},
-        422: {"description": "Validation error", "model": ErrorResponse},
-        500: {"description": "Internal server error", "model": BaseResponse},
-        503: {"description": "Database connection error", "model": BaseResponse}
+        204: {
+            "description": "User deleted successfully"
+        },
+        404: {
+            "description": "User not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "User not found"
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Validation error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "code": 422,
+                        "message": "Request validation failed",
+                        "details": [
+                            {
+                                "field": "query -> id",
+                                "message": "field required",
+                                "type": "missing"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Internal server error occurred"
+                    }
+                }
+            }
+        },
+        503: {
+            "description": "Database connection error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Database connection error"
+                    }
+                }
+            }
+        }
     }
 )(delete_user)

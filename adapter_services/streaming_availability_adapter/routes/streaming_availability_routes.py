@@ -16,56 +16,15 @@ class StreamingService(BaseModel):
     link: str = Field(..., description="URL to watch the movie")
     logo: str = Field(..., description="URL to service logo image")
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "service_name": "Netflix",
-                "service_type": "Stream",
-                "link": "https://www.netflix.com/title/12345",
-                "logo": "https://image.service.com/netflix-logo.png"
-            }
-        }
-
 class StreamingResponse(BaseModel):
     status: str = Field(..., description="Response status ('success' or 'error')")
     message: str = Field(..., description="Response message")
     data: List[StreamingService] = Field(..., description="List of available streaming services")
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "status": "success",
-                "message": "Streaming availability retrieved successfully",
-                "data": [
-                    {
-                        "service_name": "Netflix",
-                        "service_type": "Stream",
-                        "link": "https://www.netflix.com/title/12345",
-                        "logo": "https://image.service.com/netflix-logo.png"
-                    },
-                    {
-                        "service_name": "Amazon Prime",
-                        "service_type": "Rent/Buy",
-                        "link": "https://www.amazon.com/movie/12345",
-                        "logo": "https://image.service.com/prime-logo.png"
-                    }
-                ]
-            }
-        }
-
 class ValidationError(BaseModel):
     field: str
     message: str
     type: str
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "field": "query -> imdb_id",
-                "message": "field required",
-                "type": "missing"
-            }
-        }
 
 class ErrorResponse(BaseModel):
     status: str = "error"
@@ -73,31 +32,50 @@ class ErrorResponse(BaseModel):
     message: str
     details: Optional[Dict[str, Any]] = None
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "status": "error",
-                "code": 422,
-                "message": "Request validation failed",
-                "details": [
-                    {
-                        "field": "query -> imdb_id",
-                        "message": "field required",
-                        "type": "missing"
-                    }
-                ]
-            }
-        }
-
 router.get(
     "/",
     response_model=BaseResponse,
     summary="Health Check",
     description="Check if the Streaming Availability API adapter service is running",
     responses={
-        200: {"description": "Service is running", "model": BaseResponse},
-        405: {"description": "Method not allowed", "model": BaseResponse},
-        500: {"description": "Internal server error", "model": BaseResponse}
+        200: {
+            "description": "Service is running",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "success": {
+                            "summary": "Service is healthy",
+                            "value": {
+                                "status": "success",
+                                "message": "Streaming Availability API adapter is up and running"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        405: {
+            "description": "Method not allowed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Method not allowed"
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Internal server error occurred"
+                    }
+                }
+            }
+        }
     }
 )(health_check)
 
@@ -107,14 +85,104 @@ router.get(
     summary="Get Movie Streaming Availability",
     description="Get streaming availability information for a movie by IMDB ID",
     responses={
-        200: {"description": "Streaming availability retrieved successfully", "model": StreamingResponse},
-        400: {"description": "Invalid request parameters", "model": BaseResponse},
-        404: {"description": "Movie not found or no streaming availability", "model": BaseResponse},
-        405: {"description": "Method not allowed", "model": BaseResponse},
-        422: {"description": "Validation error", "model": ErrorResponse},
-        429: {"description": "API rate limit exceeded", "model": BaseResponse},
-        500: {"description": "Internal server error", "model": BaseResponse},
-        503: {"description": "Streaming availability service unavailable", "model": BaseResponse},
-        504: {"description": "Request to streaming availability service timed out", "model": BaseResponse}
+        200: {
+            "description": "Streaming availability retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "success",
+                        "message": "Streaming availability retrieved successfully",
+                        "data": [
+                            {
+                                "service_name": "Netflix",
+                                "service_type": "Stream",
+                                "link": "https://www.netflix.com/title/12345",
+                                "logo": "https://image.service.com/netflix-logo.png"
+                            },
+                            {
+                                "service_name": "Amazon Prime",
+                                "service_type": "Rent/Buy",
+                                "link": "https://www.amazon.com/movie/12345",
+                                "logo": "https://image.service.com/prime-logo.png"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        400: {
+            "description": "Invalid request parameters",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Invalid IMDB ID format"
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Movie not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Movie not found"
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Validation error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "code": 422,
+                        "message": "Request validation failed",
+                        "details": [
+                            {
+                                "field": "query -> imdb_id",
+                                "message": "field required",
+                                "type": "missing"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        429: {
+            "description": "API rate limit exceeded",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "API rate limit exceeded. Please try again later."
+                    }
+                }
+            }
+        },
+        503: {
+            "description": "Service unavailable",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Streaming availability service is currently unavailable"
+                    }
+                }
+            }
+        },
+        504: {
+            "description": "Gateway timeout",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Request to streaming availability service timed out"
+                    }
+                }
+            }
+        }
     }
 )(get_movie_availability)

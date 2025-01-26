@@ -15,31 +15,12 @@ class TriviaResponse(BaseModel):
     status: str = Field(..., description="Response status ('success' or 'error')")
     message: str = Field(..., description="Response message")
     ai_question: str = Field(..., description="Generated trivia question for the movie")
-    ai_response: int = Field(..., description="The correct answer to the respone can be of value [1,2,3]")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "status": "success",
-                "message": "Trivia question generated successfully",
-                "ai_question": "In the film Titanic, what is the name of the ship's look-out who first spots the iceberg?\n1. Jack Dawson\n2. Frederick Fleet\n3. Cal Hockley\n",
-                "ai_answer": "2"
-            }
-        }
+    ai_response: int = Field(..., description="The correct answer (1, 2, or 3)")
 
 class ValidationError(BaseModel):
     field: str
     message: str
     type: str
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "field": "query -> movie_title",
-                "message": "field required",
-                "type": "missing"
-            }
-        }
 
 class ErrorResponse(BaseModel):
     status: str = "error"
@@ -47,31 +28,50 @@ class ErrorResponse(BaseModel):
     message: str
     details: Optional[Dict[str, Any]] = None
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "status": "error",
-                "code": 422,
-                "message": "Request validation failed",
-                "details": [
-                    {
-                        "field": "query -> movie_title",
-                        "message": "field required",
-                        "type": "missing"
-                    }
-                ]
-            }
-        }
-
 router.get(
     "/",
     response_model=BaseResponse,
     summary="Health Check",
     description="Check if the GROQ API adapter service is running",
     responses={
-        200: {"description": "Service is running", "model": BaseResponse},
-        405: {"description": "The HTTP method is not allowed for this endpoint", "model": BaseResponse},
-        500: {"description": "Internal server error", "model": BaseResponse}
+        200: {
+            "description": "Service is running",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "success": {
+                            "summary": "Service is healthy",
+                            "value": {
+                                "status": "success",
+                                "message": "GROQ API adapter is up and running"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        405: {
+            "description": "Method not allowed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Method not allowed"
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Internal server error occurred"
+                    }
+                }
+            }
+        }
     }
 )(health_check)
 
@@ -81,12 +81,86 @@ router.get(
     summary="Get Movie Trivia",
     description="Generate a trivia question for a given movie using the GROQ API",
     responses={
-        200: {"description": "Trivia question generated successfully", "model": TriviaResponse},
-        404: {"description": "HTTP error occured: [message inserted]", "model": BaseResponse},
-        405: {"description": "The HTTP method is not allowed for this endpoint", "model": BaseResponse},
-        422: {"description": "Validation error", "model": ErrorResponse},
-        500: {"description": "Internal server error or GROQ API error", "model": BaseResponse},
-        503: {"description": "GROQ service unavailable", "model": BaseResponse},
-        504: {"description": "GRQPRequest to GROQ API timed out", "model": BaseResponse}
+        200: {
+            "description": "Trivia question generated successfully",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "success": {
+                            "summary": "Successful trivia generation",
+                            "value": {
+                                "status": "success",
+                                "message": "Trivia question generated successfully",
+                                "ai_question": "In the film Titanic, what is the name of the ship's look-out who first spots the iceberg?\n1. Jack Dawson\n2. Frederick Fleet\n3. Cal Hockley\n",
+                                "ai_answer": "2"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Movie not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Movie not found"
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Validation error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "code": 422,
+                        "message": "Request validation failed",
+                        "details": [
+                            {
+                                "field": "query -> movie_title",
+                                "message": "field required",
+                                "type": "missing"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "GROQ API error occurred"
+                    }
+                }
+            }
+        },
+        503: {
+            "description": "Service unavailable",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "GROQ service is currently unavailable"
+                    }
+                }
+            }
+        },
+        504: {
+            "description": "Gateway timeout",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "status": "error",
+                        "message": "Request to GROQ API timed out"
+                    }
+                }
+            }
+        }
     }
 )(get_trivia_question)
