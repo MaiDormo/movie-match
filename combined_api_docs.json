@@ -1,0 +1,6028 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "MovieMatch API Documentation",
+    "description": "Combined API documentation for all MovieMatch services",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/omdb/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Health check endpoint to verify if the OMDB adapter service is running",
+        "operationId": "omdb_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is up and running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Service healthy",
+                    "value": {
+                      "status": "success",
+                      "message": "OMDB API Adapter is up and running!"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "OMDB API is currently unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "OMDB API is currently unavailable"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to OMDB API timed out",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Request to OMDB API timed out"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "omdb"
+        ]
+      }
+    },
+    "/omdb/api/v1/find": {
+      "get": {
+        "summary": "Get Movie Details by ID",
+        "description": "Get detailed movie information by IMDB ID using the OMDB API",
+        "operationId": "omdb_get_movie_id_api_v1_find_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "IMDB movie ID",
+              "title": "Id"
+            },
+            "description": "IMDB movie ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Movie details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieDetailsResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Movie found",
+                    "value": {
+                      "status": "success",
+                      "message": "Movie details retrieved successfully",
+                      "data": {
+                        "Title": "The Shawshank Redemption",
+                        "Year": "1994",
+                        "imdbID": "tt0111161",
+                        "Type": "movie",
+                        "Director": "Frank Darabont",
+                        "Genre": "Drama",
+                        "Poster": "https://m.media-amazon.com/images/M/...",
+                        "imdbRating": "9.3"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Movie not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Movie not found"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> id",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "OMDB API is currently unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "OMDB API is currently unavailable"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to OMDB API timed out",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Request to OMDB API timed out"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "omdb"
+        ]
+      }
+    },
+    "/omdb/api/v1/search_info": {
+      "get": {
+        "summary": "Search Movies with Additional Info",
+        "description": "Search for movies by title and include additional details like genre and IMDb rating",
+        "operationId": "omdb_get_movies_with_info_api_v1_search_info_get",
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Movie title to search for",
+              "title": "Title"
+            },
+            "description": "Movie title to search for"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Movies retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoviesWithInfoResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Movies found",
+                    "value": {
+                      "status": "success",
+                      "message": "Movies retrieved successfully",
+                      "data": [
+                        {
+                          "Title": "The Shawshank Redemption",
+                          "Year": "1994",
+                          "imdbID": "tt0111161",
+                          "Type": "movie",
+                          "Director": "Frank Darabont",
+                          "Genre": "Drama",
+                          "Poster": "https://m.media-amazon.com/images/M/...",
+                          "imdbRating": "9.3"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No movies found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "No movies found"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> title",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "OMDB API is currently unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "OMDB API is currently unavailable"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to OMDB API timed out",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Request to OMDB API timed out"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "omdb"
+        ]
+      }
+    },
+    "/streaming_availability/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the Streaming Availability API adapter service is running",
+        "operationId": "streaming_availability_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Service is healthy",
+                    "value": {
+                      "status": "success",
+                      "message": "Streaming Availability API adapter is up and running"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Method not allowed"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "streaming_availability"
+        ]
+      }
+    },
+    "/streaming_availability/api/v1/avail": {
+      "get": {
+        "summary": "Get Movie Streaming Availability",
+        "description": "Get streaming availability information for a movie by IMDB ID",
+        "operationId": "streaming_availability_get_movie_availability_api_v1_avail_get",
+        "parameters": [
+          {
+            "name": "imdb_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^tt[0-9]{7,8}$",
+              "description": "IMDB ID of the movie",
+              "title": "Imdb Id"
+            },
+            "description": "IMDB ID of the movie",
+            "example": "tt0120338"
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2,
+              "pattern": "^[a-z]{2}$",
+              "description": "Two-letter country code (ISO 3166-1 alpha-2 (lowercase))",
+              "title": "Country"
+            },
+            "description": "Two-letter country code (ISO 3166-1 alpha-2 (lowercase))",
+            "example": "us"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Streaming availability retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StreamingResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Streaming availability retrieved successfully",
+                  "data": [
+                    {
+                      "service_name": "Netflix",
+                      "service_type": "Stream",
+                      "link": "https://www.netflix.com/title/12345",
+                      "logo": "https://image.service.com/netflix-logo.png"
+                    },
+                    {
+                      "service_name": "Amazon Prime",
+                      "service_type": "Rent/Buy",
+                      "link": "https://www.amazon.com/movie/12345",
+                      "logo": "https://image.service.com/prime-logo.png"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Invalid IMDB ID format"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Movie not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Movie not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> imdb_id",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "API rate limit exceeded",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "API rate limit exceeded. Please try again later."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Streaming availability service is currently unavailable"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway timeout",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Request to streaming availability service timed out"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "streaming_availability"
+        ]
+      }
+    },
+    "/tmdb/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the TMDB API adapter service is running",
+        "operationId": "tmdb_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Service healthy",
+                    "value": {
+                      "status": "success",
+                      "message": "TMDB API adapter is up and running"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "tmdb"
+        ]
+      }
+    },
+    "/tmdb/api/v1/find-id": {
+      "get": {
+        "summary": "Get IMDB ID",
+        "description": "Get IMDB ID for a movie using TMDB ID",
+        "operationId": "tmdb_get_movie_imdb_id_api_v1_find_id_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "TMDB movie ID",
+              "title": "Id"
+            },
+            "description": "TMDB movie ID"
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Language code (e.g., en-US) [IETF BCP 47]",
+              "title": "Language"
+            },
+            "description": "Language code (e.g., en-US) [IETF BCP 47]"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "IMDB ID retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieIDResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "IMDB ID retrieved successfully",
+                  "data": {
+                    "imdb_id": "tt1375666"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Invalid TMDB ID format"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Movie not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Movie not found"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "The HTTP method is not allowed for this endpoint",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Method not allowed"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> tmdb_id",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "TMDB service unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "TMDB service is currently unavailable"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to TMDB API timed out",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Request to TMDB API timed out"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "tmdb"
+        ]
+      }
+    },
+    "/tmdb/api/v1/discover-movies": {
+      "get": {
+        "summary": "Discover Movies",
+        "description": "Find movies based on genre, minimum rating and sort order",
+        "operationId": "tmdb_discover_movies_api_v1_discover_movies_get",
+        "parameters": [
+          {
+            "name": "language",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Language code (e.g., en-US) [IETF BCP 47]",
+              "title": "Language"
+            },
+            "description": "Language code (e.g., en-US) [IETF BCP 47]"
+          },
+          {
+            "name": "with_genres",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Comma-separated list of genre IDs",
+              "title": "With Genres"
+            },
+            "description": "Comma-separated list of genre IDs"
+          },
+          {
+            "name": "vote_avg_gt",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "description": "Minimum vote average",
+              "title": "Vote Avg Gt"
+            },
+            "description": "Minimum vote average"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Sort order for results",
+              "default": "popularity.desc",
+              "title": "Sort By"
+            },
+            "description": "Sort order for results"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Movies retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MoviesListResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Movies retrieved successfully",
+                  "data": {
+                    "total_results": 42,
+                    "total_pages": 3,
+                    "movie_list": [
+                      {
+                        "Title": "Inception",
+                        "Year": "2010",
+                        "tmdbId": 27205,
+                        "Type": "movie",
+                        "GenresIds": [
+                          28,
+                          878,
+                          12
+                        ],
+                        "Poster": "/8IB2e4r4oVhHnANbnm7O3Tj6tF8.jpg",
+                        "Rating": 8.4
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Invalid genre ID format"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No movies found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "No movies found for the provided query"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "The HTTP method is not allowed for this endpoint",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Method not allowed"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> genre_id",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "TMDB service unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "TMDB service is currently unavailable"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Request to TMDB API timed out",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Request to TMDB API timed out"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "tmdb"
+        ]
+      }
+    },
+    "/tmdb/api/v1/movie": {
+      "get": {
+        "summary": "Get Movie Details",
+        "description": "Get detailed information about a movie by TMDB ID",
+        "operationId": "tmdb_get_movie_api_v1_movie_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "TMDB movie ID",
+              "title": "Id"
+            },
+            "description": "TMDB movie ID"
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Language code (e.g., en-US) [IETF BCP 47]",
+              "title": "Language"
+            },
+            "description": "Language code (e.g., en-US) [IETF BCP 47]"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Movie details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Movie found",
+                    "value": {
+                      "status": "success",
+                      "message": "Movie details retrieved successfully",
+                      "data": {
+                        "Title": "Inception",
+                        "Year": "2010",
+                        "imdbID": "tt1375666",
+                        "Type": "movie",
+                        "Director": "Christopher Nolan",
+                        "Genre": "Action, Adventure, Sci-Fi",
+                        "Poster": "https://image.tmdb.org/t/p/original/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+                        "Rating": 8.4
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Invalid TMDB ID format"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Movie not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Movie not found"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> tmdb_id",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "TMDB service unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "TMDB service is currently unavailable"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway timeout",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Request to TMDB API timed out"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "tmdb"
+        ]
+      }
+    },
+    "/spotify/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the Spotify API adapter service is running",
+        "operationId": "spotify_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Service healthy",
+                    "value": {
+                      "status": "success",
+                      "message": "Spotify API adapter is up and running"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "spotify"
+        ]
+      }
+    },
+    "/spotify/api/v1/search_playlist": {
+      "get": {
+        "summary": "Search Playlist",
+        "description": "Search for a playlist on Spotify and get its details",
+        "operationId": "spotify_get_playlist_info_api_v1_search_playlist_get",
+        "parameters": [
+          {
+            "name": "playlist_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Name of the playlist to search",
+              "title": "Playlist Name"
+            },
+            "description": "Name of the playlist to search"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Playlist found successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaylistResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Playlist found",
+                    "value": {
+                      "status": "success",
+                      "message": "Playlist found successfully",
+                      "data": {
+                        "spotify_url": "https://open.spotify.com/playlist/37i9dQZF1DX7g9DBqVEIX",
+                        "cover_url": "https://i.scdn.co/image/ab67706c0000da84c5e8f3742242066438d9e74",
+                        "name": "Titanic (Original Motion Picture Soundtrack)"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid Spotify API credentials",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Invalid Spotify API credentials"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No playlist found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "No playlist found for the given search criteria"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> movie_title",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Spotify API rate limit exceeded",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Spotify API rate limit exceeded. Please try again later."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error or incomplete playlist data"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Spotify service unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Spotify service is currently unavailable"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway timeout",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Request to Spotify API timed out"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "spotify"
+        ]
+      }
+    },
+    "/groq/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the GROQ API adapter service is running",
+        "operationId": "groq_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Service is healthy",
+                    "value": {
+                      "status": "success",
+                      "message": "GROQ API adapter is up and running"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Method not allowed"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "groq"
+        ]
+      }
+    },
+    "/groq/api/v1/get_trivia": {
+      "get": {
+        "summary": "Get Movie Trivia",
+        "description": "Generate a trivia question for a given movie using the GROQ API",
+        "operationId": "groq_get_trivia_question_api_v1_get_trivia_get",
+        "parameters": [
+          {
+            "name": "movie_title",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "description": "Movie title to generate trivia for",
+              "title": "Movie Title"
+            },
+            "description": "Movie title to generate trivia for",
+            "example": "Titanic"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trivia question generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriviaResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful trivia generation",
+                    "value": {
+                      "status": "success",
+                      "message": "Trivia question generated successfully",
+                      "ai_question": "In the film Titanic, what is the name of the ship's look-out who first spots the iceberg?\n1. Jack Dawson\n2. Frederick Fleet\n3. Cal Hockley\n",
+                      "ai_answer": "2"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Movie not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Movie not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> movie_title",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "GROQ API error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "GROQ service is currently unavailable"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway timeout",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Request to GROQ API timed out"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "groq"
+        ]
+      }
+    },
+    "/youtube/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the YouTube API adapter service is running",
+        "operationId": "youtube_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Service healthy",
+                    "value": {
+                      "status": "success",
+                      "message": "YouTube API adapter is up and running"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "youtube"
+        ]
+      }
+    },
+    "/youtube/api/v1/get_video": {
+      "get": {
+        "summary": "Get YouTube Video",
+        "description": "Search for a video on YouTube and get its embed URL",
+        "operationId": "youtube_search_youtube_api_v1_get_video_get",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "description": "Search query for finding relevant YouTube video",
+              "title": "Query"
+            },
+            "description": "Search query for finding relevant YouTube video",
+            "example": "Titanic movie trailer 1997"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Video found successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/YoutubeResponse"
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Video found",
+                    "value": {
+                      "status": "success",
+                      "message": "YouTube video successfully retrieved!",
+                      "data": {
+                        "video_id": "kVrqfYjkTdQ",
+                        "embed_url": "https://www.youtube.com/embed/kVrqfYjkTdQ"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid YouTube API credentials",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Invalid YouTube API credentials"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No videos found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "No videos found for the provided query"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Method not allowed"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> query",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "YouTube API quota exceeded",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "YouTube API quota exceeded. Please try again later."
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Failed to fetch video from YouTube API"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "YouTube service unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "YouTube service is currently unavailable"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway timeout",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Request to YouTube API timed out"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "youtube"
+        ]
+      }
+    },
+    "/user_db/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the User DB API adapter service is running",
+        "operationId": "user_db_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "User DB API adapter is up and running"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Method not allowed"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "user_db"
+        ]
+      }
+    },
+    "/user_db/api/v1/user": {
+      "post": {
+        "summary": "Create User",
+        "description": "Create a new user in the database",
+        "operationId": "user_db_create_user_api_v1_user_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User",
+                "description": "User object to create"
+              },
+              "example": {
+                "name": "John",
+                "surname": "Doe",
+                "email": "john.doe@example.com",
+                "password": "securepassword123",
+                "preferences": [
+                  28,
+                  35
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "User created successfully",
+                  "data": {
+                    "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+                    "name": "John",
+                    "surname": "Doe",
+                    "email": "john.doe@example.com",
+                    "preferences": [
+                      28,
+                      35
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email already registered",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Email already registered"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Method not allowed"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "body -> email",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database connection error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Database connection error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "user_db"
+        ]
+      },
+      "get": {
+        "summary": "Get User",
+        "description": "Get a specific user by ID",
+        "operationId": "user_db_find_user_api_v1_user_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Unique identifier of the user",
+              "title": "Id"
+            },
+            "description": "Unique identifier of the user",
+            "example": "066de609-b04a-4b30-b46c-32537c7f1f6e"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "User retrieved successfully",
+                  "data": {
+                    "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+                    "name": "John",
+                    "surname": "Doe",
+                    "email": "john.doe@example.com",
+                    "preferences": [
+                      28,
+                      35
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "User not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> id",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database connection error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Database connection error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "user_db"
+        ]
+      },
+      "put": {
+        "summary": "Update User",
+        "description": "Update an existing user by ID",
+        "operationId": "user_db_update_user_api_v1_user_put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Unique identifier of the user to update",
+              "title": "Id"
+            },
+            "description": "Unique identifier of the user to update",
+            "example": "066de609-b04a-4b30-b46c-32537c7f1f6e"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate",
+                "description": "Updated user properties"
+              },
+              "example": {
+                "name": "John",
+                "surname": "Smith",
+                "preferences": [
+                  28,
+                  35,
+                  12
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully or no changes needed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "examples": {
+                  "updated": {
+                    "summary": "User updated",
+                    "value": {
+                      "status": "success",
+                      "message": "User updated successfully",
+                      "data": {
+                        "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+                        "name": "John",
+                        "surname": "Doe",
+                        "email": "john.updated@example.com",
+                        "preferences": [
+                          28,
+                          35,
+                          12
+                        ]
+                      }
+                    }
+                  },
+                  "no_changes": {
+                    "summary": "No changes needed",
+                    "value": {
+                      "status": "success",
+                      "message": "No changes requested"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "User not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> id",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database connection error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Database connection error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "user_db"
+        ]
+      },
+      "delete": {
+        "summary": "Delete User",
+        "description": "Delete a user by ID",
+        "operationId": "user_db_delete_user_api_v1_user_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Unique identifier of the user to delete",
+              "title": "Id"
+            },
+            "description": "Unique identifier of the user to delete",
+            "example": "066de609-b04a-4b30-b46c-32537c7f1f6e"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "User deleted successfully"
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "User not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> id",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database connection error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Database connection error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "user_db"
+        ]
+      }
+    },
+    "/user_db/api/v1/users": {
+      "get": {
+        "summary": "List Users",
+        "description": "Get list of all users with pagination",
+        "operationId": "user_db_list_users_api_v1_users_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Maximum number of users to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Maximum number of users to return"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of users to skip",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Number of users to skip"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsersListResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Users retrieved successfully",
+                  "data": {
+                    "total": 2,
+                    "users": [
+                      {
+                        "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+                        "name": "John",
+                        "surname": "Doe",
+                        "email": "john.doe@example.com",
+                        "preferences": [
+                          28,
+                          35
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No users found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "No users found"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> page",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database connection error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Database connection error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "user_db"
+        ]
+      }
+    },
+    "/user_db/api/v1/user-email": {
+      "get": {
+        "summary": "Get User by Email",
+        "description": "Get a specific user by email address",
+        "operationId": "user_db_find_user_by_email_api_v1_user_email_get",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+              "description": "Email address of the user",
+              "title": "Email"
+            },
+            "description": "Email address of the user",
+            "example": "john.doe@example.com"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "User retrieved successfully",
+                  "data": {
+                    "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+                    "name": "John",
+                    "surname": "Doe",
+                    "email": "john.doe@example.com",
+                    "preferences": [
+                      28,
+                      35
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "User not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> email",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database connection error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Database connection error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "user_db"
+        ]
+      }
+    },
+    "/genres_db/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the Genres DB API adapter service is running",
+        "operationId": "genres_db_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Genres DB API adapter is up and running"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Method not allowed"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "genres_db"
+        ]
+      }
+    },
+    "/genres_db/api/v1/genre": {
+      "post": {
+        "summary": "Create Genre",
+        "description": "Create a new genre in the database",
+        "operationId": "genres_db_create_genre_api_v1_genre_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Genre",
+                "description": "Genre object to create"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Genre created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Genre created successfully",
+                  "data": {
+                    "genreId": 28,
+                    "name": "Action"
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Method not allowed"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Genre with this ID already exists"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "body -> name",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database connection error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Database connection error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "genres_db"
+        ]
+      },
+      "get": {
+        "summary": "Get Genre",
+        "description": "Get a specific genre by ID",
+        "operationId": "genres_db_get_genre_api_v1_genre_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Unique identifier of the genre",
+              "title": "Id"
+            },
+            "description": "Unique identifier of the genre",
+            "example": 28
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Genre retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Genre retrieved successfully",
+                  "data": {
+                    "genreId": 28,
+                    "name": "Action"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Genre not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Genre not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> id",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database connection error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Database connection error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "genres_db"
+        ]
+      },
+      "put": {
+        "summary": "Update Genre",
+        "description": "Update an existing genre by ID",
+        "operationId": "genres_db_update_genre_api_v1_genre_put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Unique identifier of the genre to update",
+              "title": "Id"
+            },
+            "description": "Unique identifier of the genre to update",
+            "example": 28
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenreUpdate",
+                "description": "Updated genre properties"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Genre updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Genre updated successfully",
+                  "data": {
+                    "genreId": 28,
+                    "name": "Action & Adventure"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Genre not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Genre not found"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Method not allowed"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Genre with this ID already exists"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "body -> name",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database connection error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Database connection error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "genres_db"
+        ]
+      },
+      "delete": {
+        "summary": "Delete Genre",
+        "description": "Delete a genre by ID",
+        "operationId": "genres_db_delete_genre_api_v1_genre_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Unique identifier of the genre to update",
+              "title": "Id"
+            },
+            "description": "Unique identifier of the genre to update",
+            "example": 28
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Genre deleted successfully"
+          },
+          "404": {
+            "description": "Genre not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Genre not found"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> id",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database connection error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Database connection error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "genres_db"
+        ]
+      }
+    },
+    "/genres_db/api/v1/genres": {
+      "get": {
+        "summary": "List Genres",
+        "description": "Get list of all available genres",
+        "operationId": "genres_db_list_genres_api_v1_genres_get",
+        "responses": {
+          "200": {
+            "description": "Genres retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenreListResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Genres retrieved successfully",
+                  "data": {
+                    "total": 2,
+                    "genres": [
+                      {
+                        "genreId": 28,
+                        "name": "Action"
+                      },
+                      {
+                        "genreId": 35,
+                        "name": "Comedy"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Genres not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Genres not found"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Method not allowed"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Internal server error occurred"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database connection error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Database connection error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "genres_db"
+        ]
+      }
+    },
+    "/email_check/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the Email Checker API adapter service is running",
+        "operationId": "email_check_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Email Check Service is up and running"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "code": 500,
+                  "message": "An internal server error occurred"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "email_check"
+        ]
+      }
+    },
+    "/email_check/api/v1/email": {
+      "get": {
+        "summary": "Validate Email",
+        "description": "Validate an email address using the Abstract Email Validation API",
+        "operationId": "email_check_check_email_api_v1_email_get",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Email address to validate",
+              "title": "Email"
+            },
+            "description": "Email address to validate",
+            "example": "user@example.com"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email validation completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailValidationResponse"
+                },
+                "examples": {
+                  "valid_email": {
+                    "value": {
+                      "status": "success",
+                      "message": "Email validation successful",
+                      "data": {
+                        "email": "valid.user@example.com",
+                        "deliverability": "DELIVERABLE",
+                        "is_valid_format": "TRUE"
+                      }
+                    }
+                  },
+                  "invalid_email": {
+                    "value": {
+                      "status": "success",
+                      "message": "Email validation successful",
+                      "data": {
+                        "email": "invalid.email@nonexistent.com",
+                        "deliverability": "UNDELIVERABLE",
+                        "is_valid_format": "TRUE"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid email format",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Invalid email format"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid API key",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Invalid or missing API key"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "query -> email",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "API rate limit exceeded",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "API rate limit exceeded. Please try again later."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "An internal server error occurred"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Invalid response from email validation service",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Invalid response format from email validation service"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Email validation service unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Email validation service is temporarily unavailable"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway timeout",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Request to email validation service timed out"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Adapter",
+          "email_check"
+        ]
+      }
+    },
+    "/movie_details/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the Movie Details Service is running",
+        "operationId": "movie_details_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Movie Details Service is up and running!"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Business Logic",
+          "movie_details"
+        ]
+      }
+    },
+    "/movie_details/api/v1/movie_details": {
+      "get": {
+        "summary": "Get Movie Details",
+        "description": "Retrieve detailed information about a movie, including streaming availability, YouTube trailers, Spotify playlists, and trivia questions.",
+        "operationId": "movie_details_get_movie_details_api_v1_movie_details_get",
+        "parameters": [
+          {
+            "name": "movie_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Movie Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Movie details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieDetailsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Movie not found",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Incorrect IMDb ID."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "All services are currently unavailable"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Business Logic",
+          "movie_details"
+        ]
+      }
+    },
+    "/movie_search/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the Movie Search Service is running",
+        "operationId": "movie_search_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Movie Details Service is up and running!"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Business Logic",
+          "movie_search"
+        ]
+      }
+    },
+    "/movie_search/api/v1/user_genres": {
+      "get": {
+        "summary": "Get user Genres",
+        "description": "Get a list of all the available genres, and for everyone of them the relative String description and whether it is one of the user's favorites",
+        "operationId": "movie_search_get_user_genres_api_v1_user_genres_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Genres retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenreList"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "GENRE DATABASE service unavailable"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Business Logic",
+          "movie_search"
+        ]
+      }
+    },
+    "/movie_search/api/v1/update_user_genres": {
+      "put": {
+        "summary": "Update user Genres",
+        "description": "Update the list of user favorite genres",
+        "operationId": "movie_search_update_user_preferences_api_v1_update_user_genres_put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Unique identifier of the user whose preferences are to be updated",
+              "title": "Id"
+            },
+            "description": "Unique identifier of the user whose preferences are to be updated",
+            "example": "0b8ac00c-a52b-4649-bd75-699b49c00ce3"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "description": "List of updated preference IDs",
+                "title": "Preferences"
+              },
+              "example": [
+                28,
+                35,
+                12
+              ]
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Genres updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "User updated successfully",
+                  "data": {
+                    "_id": "0b8ac00c-a52b-4649-bd75-699b49c00ce3",
+                    "name": "John",
+                    "surname": "Doe",
+                    "email": "john.doe@example.com",
+                    "preferences": [
+                      12
+                    ],
+                    "password": "$2b$12$00EMiNPHr9vxnUcwUy.GpuHFW8083fr02/DaWMgILAnil6pvwzZsy"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Business Logic",
+          "movie_search"
+        ]
+      }
+    },
+    "/movie_search/api/v1/movie_search_text": {
+      "get": {
+        "summary": "Text search",
+        "description": "Get a list of movies by using a text search",
+        "operationId": "movie_search_get_text_movie_search_api_v1_movie_search_text_get",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Query"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Movies list retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextMovieList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Business Logic",
+          "movie_search"
+        ]
+      }
+    },
+    "/movie_search/api/v1/movie_search_genre": {
+      "get": {
+        "summary": "Genre search",
+        "description": "Get a list of movies by using a genre search",
+        "operationId": "movie_search_get_genre_movie_search_api_v1_movie_search_genre_get",
+        "parameters": [
+          {
+            "name": "language",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Language"
+            }
+          },
+          {
+            "name": "with_genres",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "With Genres"
+            }
+          },
+          {
+            "name": "vote_avg_gt",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "title": "Vote Avg Gt"
+            }
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Sort results by this value",
+              "default": "popularity.desc",
+              "title": "Sort By"
+            },
+            "description": "Sort results by this value"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Movies list retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextMovieList"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Business Logic",
+          "movie_search"
+        ]
+      }
+    },
+    "/valid_email/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the Email Validation Service is running",
+        "operationId": "valid_email_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Valid Email Business Logic Service is up and running"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Business Logic",
+          "valid_email"
+        ]
+      }
+    },
+    "/valid_email/api/v1/validate-email": {
+      "get": {
+        "summary": "Validate Email Address",
+        "description": "Validate an email address format and its deliverability.",
+        "operationId": "valid_email_validate_email_api_v1_validate_email_get",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Email address to validate",
+              "title": "Email"
+            },
+            "description": "Email address to validate"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email validation successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Email validation successful",
+                  "data": {
+                    "email_check": {
+                      "email": "a@gmaiul.com",
+                      "valid": "true",
+                      "message": "Email validation successful"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid email format or undeliverable email",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Email validation failed",
+                  "data": {
+                    "email": "Invalid email format. Please provide a valid email address."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "error",
+                  "message": "Email validation service is temporarily unavailable"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Business Logic",
+          "valid_email"
+        ]
+      }
+    },
+    "/user_registration/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the User Registration Service is running",
+        "operationId": "user_registration_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "User Registration Service is up and running"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Process Centric",
+          "user_registration"
+        ]
+      }
+    },
+    "/user_registration/api/v1/registrate-user": {
+      "post": {
+        "summary": "Register New User",
+        "description": "Register a new user with email validation and creation in database",
+        "operationId": "user_registration_registrate_user_api_v1_registrate_user_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserRegistration",
+                "description": "User registration data"
+              },
+              "example": {
+                "name": "John",
+                "surname": "Doe",
+                "email": "john.doe@example.com",
+                "password": "securepassword123",
+                "password_confirmation": "securepassword123"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "examples": {
+                  "password_mismatch": {
+                    "value": {
+                      "status": "error",
+                      "message": "Validation failed",
+                      "data": {
+                        "password": "The password and password confirmation do not match!"
+                      }
+                    }
+                  },
+                  "email_exists": {
+                    "value": {
+                      "status": "error",
+                      "message": "Registration failed",
+                      "data": {
+                        "email": "This email is already registered"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "body -> password",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Service is temporarily unavailable. Please try again later."
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Request timed out. Please try again."
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Process Centric",
+          "user_registration"
+        ]
+      }
+    },
+    "/user_login/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the User Login Service is running",
+        "operationId": "user_login_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "User Login Service is up and running!"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "code": 405,
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Process Centric",
+          "user_login"
+        ]
+      }
+    },
+    "/user_login/api/v1/login": {
+      "post": {
+        "summary": "User Login",
+        "description": "Authenticate user and return access token",
+        "operationId": "user_login_login_api_v1_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_api_v1_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "missing_credentials": {
+                    "value": {
+                      "status": "error",
+                      "code": 400,
+                      "message": "Email and password are required"
+                    }
+                  },
+                  "invalid_password": {
+                    "value": {
+                      "status": "error",
+                      "code": 400,
+                      "message": "Invalid password"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "code": 404,
+                  "message": "Email not found. Please check your email and try again."
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "code": 405,
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "body -> password",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "code": 500,
+                  "message": "An internal server error occurred"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "code": 504,
+                  "message": "Database service timeout"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Process Centric",
+          "user_login"
+        ]
+      }
+    },
+    "/user_login/api/v1/refresh-token": {
+      "post": {
+        "summary": "Refresh Token",
+        "description": "Refresh an existing access token",
+        "operationId": "user_login_refresh_token_api_v1_refresh_token_post",
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "invalid_token": {
+                    "value": {
+                      "status": "error",
+                      "code": 401,
+                      "message": "Invalid token format"
+                    }
+                  },
+                  "expired_token": {
+                    "value": {
+                      "status": "error",
+                      "code": 401,
+                      "message": "Token has expired"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "code": 405,
+                  "message": "The HTTP method is not allowed for this endpoint"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "code": 422,
+                  "message": "Request validation failed",
+                  "details": [
+                    {
+                      "field": "header -> authorization",
+                      "message": "field required",
+                      "type": "missing"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "tags": [
+          "Process Centric",
+          "user_login"
+        ]
+      }
+    },
+    "/movie_match/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Check if the Movie Match Service is running",
+        "operationId": "movie_match_health_check__get",
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Movie Match Service is up and running!"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Process Centric",
+          "movie_match"
+        ]
+      }
+    },
+    "/movie_match/api/v1/movies": {
+      "get": {
+        "summary": "Get Movie Details",
+        "description": "Retrieve details about a specific movie.",
+        "operationId": "movie_match_get_movie_details_api_v1_movies_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Movie details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Movie details retrieved successfully",
+                  "data": {
+                    "movie_details": {
+                      "omdb": {
+                        "Title": "Avengers: Endgame",
+                        "Year": "2019",
+                        "imdbID": "tt4154796",
+                        "Type": "movie",
+                        "Director": "Anthony Russo, Joe Russo",
+                        "Genre": "Action, Adventure, Drama",
+                        "Poster": "https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg",
+                        "imdbRating": "8.4"
+                      },
+                      "youtube": {
+                        "status": "success",
+                        "message": "YouTube video retrieved successfully",
+                        "data": {
+                          "video_id": "TcMBFSGVi1c",
+                          "embed_url": "https://www.youtube.com/embed/TcMBFSGVi1c"
+                        }
+                      },
+                      "spotify": {
+                        "status": "success",
+                        "message": "Playlist found successfully",
+                        "data": {
+                          "spotify_url": "https://open.spotify.com/playlist/085SdQYERg63mWDVK3Xwi9",
+                          "cover_url": "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da8481be56f5be03e95f0cd4cc8",
+                          "name": "Avengers: Endgame Soundtrack Official Playlist"
+                        }
+                      },
+                      "streaming": {
+                        "status": "success",
+                        "message": "Streaming availability retrieved successfully",
+                        "data": [
+                          {
+                            "service_name": "Apple TV",
+                            "service_type": "Buy",
+                            "link": "https://tv.apple.com/it/movie/avengers-endgame/umc.cmc.4ao9tm6b6rz4sy7yj5v13ltf8?playableId=tvs.sbd.9001%3A1459466643",
+                            "logo": "https://media.movieofthenight.com/services/apple/logo-light-theme.svg"
+                          },
+                          {
+                            "service_name": "Disney+",
+                            "service_type": "Subscription",
+                            "link": "https://www.disneyplus.com/movies/marvel-studios-avengers-endgame/aRbVJUb2h2Rf",
+                            "logo": "https://media.movieofthenight.com/services/disney/logo-light-theme.svg"
+                          },
+                          {
+                            "service_name": "Prime Video",
+                            "service_type": "Buy/Rent",
+                            "link": "https://www.primevideo.com/detail/0OI091IRNAIWL6HY536UZ1JA6O/ref=atv_dp",
+                            "logo": "https://media.movieofthenight.com/services/prime/logo-light-theme.svg"
+                          }
+                        ]
+                      },
+                      "trivia": {
+                        "status": "success",
+                        "message": "Trivia question generated successfully",
+                        "ai_question": "In the film Avengers: Endgame, what is the name of the plan devised by the surviving Avengers to undo the damage caused by Thanos?\n\n1. The Quantum Plan\n2. The Time Travel Initiative\n3. The Infinity Gauntlet Scheme\n\n",
+                        "ai_answer": "3"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Movie not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Process Centric",
+          "movie_match"
+        ]
+      }
+    },
+    "/movie_match/api/v1/user-genres": {
+      "get": {
+        "summary": "Get User Genres",
+        "description": "Retrieve the list of genres and user preferences.",
+        "operationId": "movie_match_get_user_genres_api_v1_user_genres_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Genres retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Genres and user preferences retrieved successfully",
+                  "data": {
+                    "user_genres": [
+                      {
+                        "genreId": 28,
+                        "name": "Action",
+                        "isPreferred": false
+                      },
+                      {
+                        "genreId": 12,
+                        "name": "Adventure",
+                        "isPreferred": true
+                      },
+                      {
+                        "genreId": 16,
+                        "name": "Animation",
+                        "isPreferred": false
+                      },
+                      {
+                        "genreId": 35,
+                        "name": "Comedy",
+                        "isPreferred": false
+                      },
+                      {
+                        "genreId": 80,
+                        "name": "Crime",
+                        "isPreferred": true
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Process Centric",
+          "movie_match"
+        ]
+      }
+    },
+    "/movie_match/api/v1/user-genres/update": {
+      "put": {
+        "summary": "Update User Genres",
+        "description": "Update the list of user favorite genres.",
+        "operationId": "movie_match_update_user_genres_api_v1_user_genres_update_put",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "title": "Preferences"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Genres updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "User updated successfully",
+                  "data": {
+                    "_id": "0b8ac00c-a52b-4649-bd75-699b49c00ce3",
+                    "name": "John",
+                    "surname": "Doe",
+                    "email": "john.doe@example.com",
+                    "preferences": [
+                      12
+                    ],
+                    "password": "$2b$12$00EMiNPHr9vxnUcwUy.GpuHFW8083fr02/DaWMgILAnil6pvwzZsy"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Process Centric",
+          "movie_match"
+        ]
+      }
+    },
+    "/movie_match/api/v1/movies/search-by-text": {
+      "get": {
+        "summary": "Search Movies by Text",
+        "description": "Search for movies using a text query.",
+        "operationId": "movie_match_get_movie_search_by_text_api_v1_movies_search_by_text_get",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Query"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Movies retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Movies retrieved successfully",
+                  "data": {
+                    "movie_list": [
+                      {
+                        "Title": "The Lord of the Rings: The Return of the King",
+                        "Year": "2003",
+                        "imdbID": "tt0167260",
+                        "Poster": "https://image.tmdb.org/t/p/original//rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg",
+                        "Genre": "Adventure, Fantasy, Action",
+                        "imdbRating": 8.5
+                      },
+                      {
+                        "Title": "The Lord of the Rings: The Fellowship of the Ring",
+                        "Year": "2001",
+                        "imdbID": "tt0120737",
+                        "Poster": "https://image.tmdb.org/t/p/original//6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
+                        "Genre": "Adventure, Fantasy, Action",
+                        "imdbRating": 8.4
+                      },
+                      {
+                        "Title": "Spider-Man: Across the Spider-Verse",
+                        "Year": "2023",
+                        "imdbID": "tt9362722",
+                        "Poster": "https://image.tmdb.org/t/p/original//8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg",
+                        "Genre": "Animation, Action, Adventure, Science Fiction",
+                        "imdbRating": 8.4
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Process Centric",
+          "movie_match"
+        ]
+      }
+    },
+    "/movie_match/api/v1/movies/search-by-genre": {
+      "get": {
+        "summary": "Search Movies by Genre",
+        "description": "Search for movies by selecting specific genres.",
+        "operationId": "movie_match_get_genre_movie_search_by_url_api_v1_movies_search_by_genre_get",
+        "parameters": [
+          {
+            "name": "with_genres",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "With Genres"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Movies retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseWithData"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Movies retrieved successfully",
+                  "data": {
+                    "movie_list": [
+                      {
+                        "Title": "Cars of the Revolution",
+                        "Year": "2008",
+                        "imdbID": "tt1282139",
+                        "Type": "movie",
+                        "Poster": "https://m.media-amazon.com/images/M/MV5BMmY0MzA0ODItNjUwZi00YjlmLTk5Y2EtY2E0NjJlNzVhMWQyXkEyXkFqcGc@._V1_SX300.jpg",
+                        "Genre": "Drama, History",
+                        "imdbRating": "8.0"
+                      },
+                      {
+                        "Title": "Cars",
+                        "Year": "2006",
+                        "imdbID": "tt0317219",
+                        "Type": "movie",
+                        "Poster": "https://m.media-amazon.com/images/M/MV5BMTg5NzY0MzA2MV5BMl5BanBnXkFtZTYwNDc3NTc2._V1_SX300.jpg",
+                        "Genre": "Animation, Adventure, Comedy",
+                        "imdbRating": "7.3"
+                      },
+                      {
+                        "Title": "Two Cars, One Night",
+                        "Year": "2003",
+                        "imdbID": "tt0390579",
+                        "Type": "movie",
+                        "Poster": "https://m.media-amazon.com/images/M/MV5BYmVjMmZkMTEtNGY5OC00MDFlLTk5NmYtYzQxMGIyNDI1MzBhXkEyXkFqcGc@._V1_SX300.jpg",
+                        "Genre": "Short, Comedy, Drama",
+                        "imdbRating": "7.2"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Process Centric",
+          "movie_match"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BaseResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "BaseResponse"
+      },
+      "MovieDetails": {
+        "properties": {
+          "Title": {
+            "type": "string",
+            "title": "Title",
+            "description": "The full title of the movie as listed in OMDB"
+          },
+          "Year": {
+            "type": "string",
+            "title": "Year",
+            "description": "The release year of the movie in YYYY format"
+          },
+          "imdbID": {
+            "type": "string",
+            "title": "Imdbid",
+            "description": "Unique IMDB identifier starting with 'tt' followed by digits"
+          },
+          "Type": {
+            "type": "string",
+            "title": "Type",
+            "description": "The media type (e.g., 'movie', 'series', 'episode')"
+          },
+          "Director": {
+            "type": "string",
+            "title": "Director",
+            "description": "Name of the movie director(s)"
+          },
+          "Genre": {
+            "type": "string",
+            "title": "Genre",
+            "description": "Comma-separated list of genres (e.g., 'Action, Adventure, Sci-Fi')"
+          },
+          "Poster": {
+            "type": "string",
+            "title": "Poster",
+            "description": "URL to the movie poster image on IMDB"
+          },
+          "imdbRating": {
+            "type": "string",
+            "title": "Imdbrating",
+            "description": "IMDB rating from 0 to 10 as a string (e.g., '8.5')"
+          }
+        },
+        "type": "object",
+        "required": [
+          "Title",
+          "Year",
+          "imdbID",
+          "Type",
+          "Director",
+          "Genre",
+          "Poster",
+          "imdbRating"
+        ],
+        "title": "MovieDetails"
+      },
+      "MovieDetailsResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "Detailed information about the movie"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "MovieDetailsResponse",
+        "example": {
+          "data": {
+            "movie_details": {
+              "omdb": {
+                "Director": "Anthony Russo, Joe Russo",
+                "Genre": "Action, Adventure, Drama",
+                "Poster": "https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg",
+                "Title": "Avengers: Endgame",
+                "Type": "movie",
+                "Year": "2019",
+                "imdbID": "tt4154796",
+                "imdbRating": "8.4"
+              },
+              "spotify": {
+                "data": {
+                  "cover_url": "https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da8481be56f5be03e95f0cd4cc8",
+                  "name": "Avengers: Endgame Soundtrack Official Playlist",
+                  "spotify_url": "https://open.spotify.com/playlist/085SdQYERg63mWDVK3Xwi9"
+                },
+                "message": "Playlist found successfully",
+                "status": "success"
+              },
+              "streaming": {
+                "data": [
+                  {
+                    "link": "https://tv.apple.com/it/movie/avengers-endgame/umc.cmc.4ao9tm6b6rz4sy7yj5v13ltf8?playableId=tvs.sbd.9001%3A1459466643",
+                    "logo": "https://media.movieofthenight.com/services/apple/logo-light-theme.svg",
+                    "service_name": "Apple TV",
+                    "service_type": "Buy"
+                  },
+                  {
+                    "link": "https://www.disneyplus.com/movies/marvel-studios-avengers-endgame/aRbVJUb2h2Rf",
+                    "logo": "https://media.movieofthenight.com/services/disney/logo-light-theme.svg",
+                    "service_name": "Disney+",
+                    "service_type": "Subscription"
+                  },
+                  {
+                    "link": "https://www.primevideo.com/detail/0OI091IRNAIWL6HY536UZ1JA6O/ref=atv_dp",
+                    "logo": "https://media.movieofthenight.com/services/prime/logo-light-theme.svg",
+                    "service_name": "Prime Video",
+                    "service_type": "Buy/Rent"
+                  }
+                ],
+                "message": "Streaming availability retrieved successfully",
+                "status": "success"
+              },
+              "trivia": {
+                "ai_answer": "3",
+                "ai_question": "In the film Avengers: Endgame, what is the name of the plan devised by the surviving Avengers to undo the damage caused by Thanos?\n\n1. The Quantum Plan\n2. The Time Travel Initiative\n3. The Infinity Gauntlet Scheme\n\n",
+                "message": "Trivia question generated successfully",
+                "status": "success"
+              },
+              "youtube": {
+                "data": {
+                  "embed_url": "https://www.youtube.com/embed/TcMBFSGVi1c",
+                  "video_id": "TcMBFSGVi1c"
+                },
+                "message": "YouTube video retrieved successfully",
+                "status": "success"
+              }
+            }
+          },
+          "message": "Movie details retrieved successfully",
+          "status": "success"
+        }
+      },
+      "MoviesWithInfoResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Descriptive message about the movie search with details"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MovieDetails"
+            },
+            "type": "array",
+            "title": "Data",
+            "description": "List of movies with additional details like genre and rating"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "MoviesWithInfoResponse"
+      },
+      "StreamingResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/StreamingService"
+            },
+            "type": "array",
+            "title": "Data",
+            "description": "List of available streaming services"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "StreamingResponse"
+      },
+      "StreamingService": {
+        "properties": {
+          "service_name": {
+            "type": "string",
+            "title": "Service Name",
+            "description": "Name of the streaming service"
+          },
+          "service_type": {
+            "type": "string",
+            "title": "Service Type",
+            "description": "Type of service (Stream/Rent/Buy)"
+          },
+          "link": {
+            "type": "string",
+            "title": "Link",
+            "description": "URL to watch the movie"
+          },
+          "logo": {
+            "type": "string",
+            "title": "Logo",
+            "description": "URL to service logo image"
+          }
+        },
+        "type": "object",
+        "required": [
+          "service_name",
+          "service_type",
+          "link",
+          "logo"
+        ],
+        "title": "StreamingService"
+      },
+      "MovieIDResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "Response containing IMDB ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "MovieIDResponse"
+      },
+      "MovieResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "Movie details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "MovieResponse"
+      },
+      "MoviesListResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "List of discovered movies with pagination info"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "MoviesListResponse"
+      },
+      "PlaylistResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "Playlist details from Spotify"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "PlaylistResponse"
+      },
+      "TriviaResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "ai_question": {
+            "type": "string",
+            "title": "Ai Question",
+            "description": "Generated trivia question for the movie"
+          },
+          "ai_response": {
+            "type": "integer",
+            "title": "Ai Response",
+            "description": "The correct answer (1, 2, or 3)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "ai_question",
+          "ai_response"
+        ],
+        "title": "TriviaResponse"
+      },
+      "YoutubeResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Data",
+            "description": "YouTube video details including ID and embed URL"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "YoutubeResponse"
+      },
+      "User": {
+        "properties": {
+          "_id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique identifier for the user (auto-generated UUID4)",
+            "example": "066de609-b04a-4b30-b46c-32537c7f1f6e"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Name",
+            "description": "User's first name",
+            "example": "John"
+          },
+          "surname": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Surname",
+            "description": "User's last name",
+            "example": "Doe"
+          },
+          "email": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+            "title": "Email",
+            "description": "User's email address - must be a valid email format",
+            "example": "john.doe@example.com"
+          },
+          "preferences": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 0,
+            "title": "Preferences",
+            "description": "List of genre IDs representing user's movie preferences",
+            "example": [
+              28,
+              35
+            ]
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Password",
+            "description": "User's password - must be at least 8 characters long",
+            "example": "securepassword123"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "surname",
+          "email",
+          "preferences",
+          "password"
+        ],
+        "title": "User",
+        "description": "User model for registration and profile management",
+        "example": {
+          "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+          "email": "john.doe@example.com",
+          "name": "John",
+          "password": "securepassword123",
+          "preferences": [
+            28,
+            35
+          ],
+          "surname": "Doe"
+        }
+      },
+      "UserResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "User details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "UserResponse",
+        "example": {
+          "data": {
+            "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+            "email": "john.doe@example.com",
+            "name": "John",
+            "preferences": [
+              28,
+              35
+            ],
+            "surname": "Doe"
+          },
+          "message": "User retrieved successfully",
+          "status": "success"
+        }
+      },
+      "UserUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "New first name for the user",
+            "example": "John"
+          },
+          "surname": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surname",
+            "description": "New last name for the user",
+            "example": "Smith"
+          },
+          "preferences": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array",
+                "maxItems": 20,
+                "minItems": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferences",
+            "description": "Updated list of genre IDs for user's movie preferences",
+            "example": [
+              28,
+              14,
+              35
+            ]
+          }
+        },
+        "type": "object",
+        "title": "UserUpdate",
+        "description": "Model for updating user information - all fields optional",
+        "examples": [
+          {
+            "preferences": [
+              28,
+              14
+            ]
+          },
+          {
+            "name": "John",
+            "preferences": [
+              28,
+              14,
+              35
+            ],
+            "surname": "Smith"
+          }
+        ]
+      },
+      "UsersListResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "List of users with pagination"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "UsersListResponse",
+        "example": {
+          "data": {
+            "total": 2,
+            "users": [
+              {
+                "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+                "email": "john.doe@example.com",
+                "name": "John",
+                "preferences": [
+                  28,
+                  35
+                ],
+                "surname": "Doe"
+              }
+            ]
+          },
+          "message": "Users retrieved successfully",
+          "status": "success"
+        }
+      },
+      "Genre": {
+        "properties": {
+          "genreId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Genreid",
+            "description": "Unique identifier for the genre (auto-generated)",
+            "example": 28
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Name",
+            "description": "The name of the genre",
+            "example": "Action"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "Genre",
+        "description": "A movie genre with a unique identifier and name",
+        "example": {
+          "genreId": 28,
+          "name": "Action"
+        }
+      },
+      "GenreListResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "List of genres with count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "GenreListResponse"
+      },
+      "GenreUpdate": {
+        "properties": {
+          "genreId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Genreid",
+            "description": "The unique identifier of the genre to update",
+            "example": 878
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "The new name for the genre",
+            "example": "Sci-Fi"
+          }
+        },
+        "type": "object",
+        "title": "GenreUpdate",
+        "description": "Fields to update for an existing genre",
+        "example": {
+          "genreId": 878,
+          "name": "Sci-Fi"
+        }
+      },
+      "EmailValidationResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "Email validation details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "EmailValidationResponse",
+        "example": {
+          "data": {
+            "deliverability": "DELIVERABLE",
+            "email": "user@example.com",
+            "is_valid_format": "TRUE"
+          },
+          "message": "Email validation successful",
+          "status": "success"
+        }
+      },
+      "ErrorResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Error status indicator",
+            "default": "error"
+          },
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "HTTP status code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Error message"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ValidationError"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details",
+            "description": "Additional error details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorResponse",
+        "example": {
+          "code": 422,
+          "details": [
+            {
+              "field": "body -> password",
+              "message": "field required",
+              "type": "missing"
+            }
+          ],
+          "message": "Request validation failed",
+          "status": "error"
+        }
+      },
+      "BaseResponseWithData": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data",
+            "description": "Additional data or error details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "BaseResponseWithData"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "GenreList": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "Genre list and relative user preference"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "GenreList",
+        "example": {
+          "data": {
+            "user_genres": [
+              {
+                "genreId": 28,
+                "isPreferred": false,
+                "name": "Action"
+              },
+              {
+                "genreId": 12,
+                "isPreferred": true,
+                "name": "Adventure"
+              },
+              {
+                "genreId": 16,
+                "isPreferred": false,
+                "name": "Animation"
+              },
+              {
+                "genreId": 35,
+                "isPreferred": false,
+                "name": "Comedy"
+              },
+              {
+                "genreId": 80,
+                "isPreferred": true,
+                "name": "Crime"
+              }
+            ]
+          },
+          "message": "Genres and user preferences retrieved successfully",
+          "status": "success"
+        }
+      },
+      "TextMovieList": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "Movie list with relative details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "TextMovieList",
+        "example": {
+          "data": {
+            "movie_list": [
+              {
+                "Genre": "Adventure, Fantasy, Action",
+                "Poster": "https://image.tmdb.org/t/p/original//rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg",
+                "Title": "The Lord of the Rings: The Return of the King",
+                "Year": "2003",
+                "imdbID": "tt0167260",
+                "imdbRating": 8.5
+              },
+              {
+                "Genre": "Adventure, Fantasy, Action",
+                "Poster": "https://image.tmdb.org/t/p/original//6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
+                "Title": "The Lord of the Rings: The Fellowship of the Ring",
+                "Year": "2001",
+                "imdbID": "tt0120737",
+                "imdbRating": 8.4
+              },
+              {
+                "Genre": "Animation, Action, Adventure, Science Fiction",
+                "Poster": "https://image.tmdb.org/t/p/original//8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg",
+                "Title": "Spider-Man: Across the Spider-Verse",
+                "Year": "2023",
+                "imdbID": "tt9362722",
+                "imdbRating": 8.4
+              }
+            ]
+          },
+          "message": "Movies retrieved successfully",
+          "status": "success"
+        }
+      },
+      "UserRegistration": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "surname": {
+            "type": "string",
+            "title": "Surname"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "Must be a valid email address"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password",
+            "description": "Password must be at least 8 characters long"
+          },
+          "password_confirmation": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password Confirmation",
+            "description": "Password must be at least 8 characters long"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "surname",
+          "email",
+          "password",
+          "password_confirmation"
+        ],
+        "title": "UserRegistration",
+        "example": {
+          "email": "john.doe@example.com",
+          "name": "John",
+          "password": "securepassword123",
+          "password_confirmation": "securepassword123",
+          "surname": "Doe"
+        }
+      },
+      "Body_login_api_v1_login_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "password"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_api_v1_login_post"
+      },
+      "TokenResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Response status ('success' or 'error')"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          },
+          "data": {
+            "type": "object",
+            "title": "Data",
+            "description": "Token data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "data"
+        ],
+        "title": "TokenResponse",
+        "example": {
+          "data": {
+            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "token_type": "bearer"
+          },
+          "message": "Login successful",
+          "status": "success"
+        }
+      }
+    },
+    "responses": {},
+    "parameters": {},
+    "examples": {},
+    "requestBodies": {},
+    "headers": {},
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "login"
+          }
+        }
+      }
+    },
+    "links": {},
+    "callbacks": {}
+  },
+  "tags": [
+    {
+      "name": "Adapter",
+      "description": "Services that interact with external APIs"
+    },
+    {
+      "name": "Business Logic",
+      "description": "Core business logic services"
+    },
+    {
+      "name": "Process Centric",
+      "description": "High-level process orchestration services"
+    },
+    {
+      "name": "omdb",
+      "description": "OMDB API Integration Service",
+      "x-layer": "Adapter"
+    },
+    {
+      "name": "streaming_availability",
+      "description": "Streaming Availability API Integration Service",
+      "x-layer": "Adapter"
+    },
+    {
+      "name": "tmdb",
+      "description": "TMDB API Integration Service",
+      "x-layer": "Adapter"
+    },
+    {
+      "name": "spotify",
+      "description": "Spotify API Integration Service",
+      "x-layer": "Adapter"
+    },
+    {
+      "name": "groq",
+      "description": "GROQ API Integration Service",
+      "x-layer": "Adapter"
+    },
+    {
+      "name": "youtube",
+      "description": "YouTube API Integration Service",
+      "x-layer": "Adapter"
+    },
+    {
+      "name": "user_db",
+      "description": "User Database Operations Service",
+      "x-layer": "Adapter"
+    },
+    {
+      "name": "genres_db",
+      "description": "Genre Database Operations Service",
+      "x-layer": "Adapter"
+    },
+    {
+      "name": "email_check",
+      "description": "Email Validation Service",
+      "x-layer": "Adapter"
+    },
+    {
+      "name": "movie_details",
+      "description": "Movie Details Processing Service",
+      "x-layer": "Business Logic"
+    },
+    {
+      "name": "movie_search",
+      "description": "Movie Search Processing Service",
+      "x-layer": "Business Logic"
+    },
+    {
+      "name": "valid_email",
+      "description": "Email Validation Processing Service",
+      "x-layer": "Business Logic"
+    },
+    {
+      "name": "user_registration",
+      "description": "User Registration Orchestration Service",
+      "x-layer": "Process Centric"
+    },
+    {
+      "name": "user_login",
+      "description": "User Login Orchestration Service",
+      "x-layer": "Process Centric"
+    },
+    {
+      "name": "movie_match",
+      "description": "Movie Matching Orchestration Service",
+      "x-layer": "Process Centric"
+    }
+  ],
+  "x-tagGroups": [
+    {
+      "name": "Adapter",
+      "tags": [
+        "omdb",
+        "streaming_availability",
+        "tmdb",
+        "spotify",
+        "groq",
+        "youtube",
+        "user_db",
+        "genres_db",
+        "email_check"
+      ]
+    },
+    {
+      "name": "Business Logic",
+      "tags": [
+        "movie_details",
+        "movie_search",
+        "valid_email"
+      ]
+    },
+    {
+      "name": "Process Centric",
+      "tags": [
+        "user_registration",
+        "user_login",
+        "movie_match"
+      ]
+    }
+  ]
+}
