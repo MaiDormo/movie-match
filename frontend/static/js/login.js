@@ -1,30 +1,59 @@
+// Token management class
+class TokenManager {
+    static TOKEN_KEY = 'auth_token';
+    static REFRESH_ENDPOINT = 'http://localhost:5014/api/v1/refresh-token';
+    static LOGIN_ENDPOINT = 'http://localhost:5014/api/v1/login';
+
+    static getToken() {
+        return sessionStorage.getItem(this.TOKEN_KEY);
+    }
+
+    static setToken(token) {
+        sessionStorage.setItem(this.TOKEN_KEY, token);
+    }
+
+    static removeToken() {
+        sessionStorage.removeItem(this.TOKEN_KEY);
+    }
+
+    static async refreshToken() {
+        const token = this.getToken();
+        if (!token) return;
+
+        try {
+            const response = await fetch(this.REFRESH_ENDPOINT, {
+                method: 'POST', 
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.status === 'success') {
+                this.setToken(data.data.access_token);
+                return true;
+            } else {
+                this.removeToken();
+            }
+        } catch (error) {
+            console.error('Token refresh error:', error);
+            this.removeToken();
+        }
+    }
+}
+
 async function checkExistingToken() {
-    const token = localStorage.getItem('token');
+    const token = TokenManager.getToken();
     if (!token) return;
 
     try {
-        // Verify token validity using refresh-token endpoint
-        const response = await fetch('http://localhost:5014/api/v1/refresh-token', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            // Update token and redirect to home
-            localStorage.setItem('token', data.data.access_token);
+        if (await TokenManager.refreshToken()) {
             window.location.href = '/movie-list';
-        } else {
-            // Token is invalid, remove it
-            localStorage.removeItem('token');
         }
     } catch (error) {
         console.error('Token verification error:', error);
-        localStorage.removeItem('token');
     }
 }
 
@@ -46,7 +75,7 @@ async function handleLogin(event) {
         formData.append('username', email);
         formData.append('password', password);
 
-        const response = await fetch('http://localhost:5014/api/v1/login', {
+        const response = await fetch(TokenManager.LOGIN_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -57,7 +86,7 @@ async function handleLogin(event) {
         const data = await response.json();
 
         if (response.ok && data.status === 'success') {
-            localStorage.setItem('token', data.data.access_token);
+            TokenManager.setToken(data.data.access_token);
             window.location.href = '/movie-list';
         } else {
             if (data.status === 'error') {
