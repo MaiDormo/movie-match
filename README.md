@@ -17,7 +17,7 @@ This project aims to create a web application that enables users to search for m
 
 ## Endpoints Documentation
 
-The endpoint documentation is available in the `combined_api_docs.json` file located in the root directory of the project.In orther to view the documentation you can upload the file to [Redoc](https://redocly.github.io/redoc/).
+The endpoint documentation is available in the `combined_api_docs.json` file located in the root directory of the project. In order to view the documentation you can upload the file to [Redoc](https://redocly.github.io/redoc/).
 Additionally, thanks to FastAPI's automatic documentation, you can access the documentation by running the project and navigating to the `/docs` endpoint for each Docker container.
 
 ## Architecture Diagram
