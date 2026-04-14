@@ -1,56 +1,34 @@
-from typing import Any, Dict, Optional
-from fastapi import Depends, Query, HTTPException, status
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, HttpUrl
 import os
-import requests
-from requests.exceptions import RequestException, HTTPError, ConnectionError, Timeout
+from typing import Optional
+from fastapi import Depends, Query, status
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
 
-class Settings(BaseModel):
+from shared.common.response import create_response
+from shared.common.http_utils import make_request
+
+class YoutubeSettings(BaseModel):
     youtube_search_url: str = "https://www.googleapis.com/youtube/v3/search"
-    youtube_api_key: str = os.getenv("YOUTUBE_API_KEY")
+    youtube_api_key: Optional[str] = os.getenv("YOUTUBE_API_KEY")
 
 def get_settings():
     """Dependency injection for YouTube configuration"""
-    return Settings()
+    return YoutubeSettings()
 
-
-def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
-    """Create a standardized API response"""
-    content = {
-        "status": "success" if status_code < 400 else "error",
-        "message": message
-    }
-    if data:
-        content["data"] = data
-    return JSONResponse(content=content, status_code=status_code)
-
-def make_request(url, params):
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    return response.json()
-
-
-async def health_check() -> JSONResponse:
-    """Health check endpoint"""
-    return create_response(
-        status_code=200,
-        message="YOUTUBE API Adapter is up and running!"
-    )
 
 async def search_youtube(
     query: str = Query(
         ..., 
         description="Search query for finding relevant YouTube video",
-        example="Titanic movie trailer 1997",
+        examples=["Titanic movie trailer 1997"],
         min_length=3
     ), 
-    settings: Settings = Depends(get_settings)
+    settings: YoutubeSettings = Depends(get_settings)
 ) -> JSONResponse:
     """
-    Cerca un video su YouTube utilizzando una stringa di query e restituisce l'ID del video o l'URL embed.
+    Search for a video on YouTube and return the video ID or embed URL.
     """
-    
     params = {
         "part": "snippet",
         "q": query,
@@ -60,7 +38,7 @@ async def search_youtube(
     }
 
     try:
-        result = make_request(settings.youtube_search_url, params)
+        result = make_request(settings.youtube_search_url, params=params)
 
         if "items" not in result or len(result["items"]) == 0:
             return create_response(
@@ -91,22 +69,19 @@ async def search_youtube(
             status_code=e.response.status_code,
             message=error_msg
         )
-    except ConnectionError as e:
+    except ConnectionError:
         return create_response(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            message="YouTube service is temporarily unavailable",
-            data={"error": str(e)}
+            message="YouTube service is temporarily unavailable"
         )
-    except Timeout as e:
+    except Timeout:
         return create_response(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            message="Request to YouTube API timed out",
-            data={"error": str(e)}
+            message="Request to YouTube API timed out"
         )
     except RequestException as e:
         return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            message="Failed to fetch video from YouTube API",
-            data={"error": str(e)}
+            message="Failed to fetch video from YouTube API"
         )
 

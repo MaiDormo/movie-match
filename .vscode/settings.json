@@ -1,0 +1,4 @@
+{
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "python.REPL.enableREPLSmartSend": false
+}

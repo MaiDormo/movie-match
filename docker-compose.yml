@@ -20,7 +20,10 @@ services:
   omdb-adapter:
     <<: [*common-service, *health-check]
     build:
-      context: ./adapter_services/omdb_adapter
+      context: .
+      dockerfile: ./shared/base.dockerfile
+      args:
+        SERVICE_DIR: adapter_services/omdb_adapter
     container_name: omdb-adapter
     ports:
       - "5001:5000"
@@ -44,7 +47,10 @@ services:
   tmdb-adapter:
     <<: [*common-service, *health-check]
     build:
-      context: ./adapter_services/tmdb_adapter
+      context: .
+      dockerfile: ./shared/base.dockerfile
+      args:
+        SERVICE_DIR: adapter_services/tmdb_adapter
     container_name: tmdb-adapter
     ports:
       - "5003:5000"
@@ -56,15 +62,16 @@ services:
   spotify-adapter:
     <<: [*common-service, *health-check]
     build:
-      context: ./adapter_services/spotify_adapter
+      context: .
+      dockerfile: ./shared/base.dockerfile
+      args:
+        SERVICE_DIR: adapter_services/spotify_adapter
     container_name: spotify-adapter
     ports:
       - "5004:5000"
     environment:
       - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
       - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
-    volumes:
-      - ./adapter_services/spotify_adapter:/spotify_adapter
 
   groq-adapter:
     <<: [*common-service, *health-check]
@@ -81,14 +88,15 @@ services:
   youtube-adapter:
     <<: [*common-service, *health-check]
     build:
-      context: ./adapter_services/youtube_adapter
+      context: .
+      dockerfile: ./shared/base.dockerfile
+      args:
+        SERVICE_DIR: adapter_services/youtube_adapter
     container_name: youtube-adapter
     ports:
       - "5009:5000"
     environment:
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
-    volumes:
-      - ./adapter_services/youtube_adapter:/youtube_adapter
 
   # Database Adapters
   user-db-adapter:
