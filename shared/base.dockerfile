@@ -1,16 +1,21 @@
-# shared/base.Dockerfile
-FROM python:3.14-slim-bookworm
+FROM python:3.14-slim-bookworm AS builder
+
+ARG SERVICE_DIR
+WORKDIR /build
+
+COPY ${SERVICE_DIR}/requirements.txt .
+RUN mkdir -p /install && pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.14-slim-bookworm AS runtime
 
 ARG SERVICE_DIR
 WORKDIR /app
 
-# install service deps
-COPY shared /app/shared
-COPY ${SERVICE_DIR}/requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
-ENV PYTHONPATH="/app"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
-# copy only this service
+COPY --from=builder /install /usr/local
+COPY shared /app/shared
 COPY ${SERVICE_DIR} /app
 
 EXPOSE 5000

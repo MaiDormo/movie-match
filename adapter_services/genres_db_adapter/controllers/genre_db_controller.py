@@ -15,7 +15,12 @@ def get_settings() -> Settings:
     return Settings()
 
 def get_collection(request: Request, settings: Settings = Depends(get_settings)) -> Collection:
-    mongo_client = request.app.state.db
+    mongo_client = getattr(request.app.state, "db", None)
+    if mongo_client is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database connection is not available"
+        )
     return mongo_client[settings.db_name][settings.db_collection]
 
 # Response Helpers

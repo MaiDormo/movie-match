@@ -1,6 +1,4 @@
 fastapi
-requests
 uvicorn
 pydantic
-httpx
-groq
+openai

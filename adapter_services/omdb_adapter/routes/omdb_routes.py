@@ -6,7 +6,6 @@ from typing import Any, Dict, List
 
 router = APIRouter()
 
-
 class Movie(BaseModel):
     Title: str = Field(..., description="The full title of the movie as listed in OMDB")
     Year: str = Field(..., description="The release year of the movie in YYYY format")
@@ -23,13 +22,6 @@ class Movie(BaseModel):
 
 class MovieDetails(Movie):
     imdbRating: str = Field(..., description="IMDB rating from 0 to 10 as a string")
-
-
-class BaseResponse(BaseModel):
-    status: str = Field(..., description="Response status ('success' or 'error')")
-    message: str = Field(
-        ..., description="Descriptive message about the operation result"
-    )
 
 
 class MovieDetailsResponse(BaseModel):
@@ -50,19 +42,6 @@ class MoviesWithInfoResponse(BaseModel):
     data: Dict[str, List[MovieDetails]] = Field(
         ..., description="Movies wrapped in a data object"
     )
-
-
-class ValidationError(BaseModel):
-    field: str
-    message: str
-    type: str
-
-
-class ErrorResponse(BaseModel):
-    status: str = "error"
-    code: int
-    message: str
-    details: List[ValidationError] | Dict[str, Any] | None = None
 
 
 SUCCESS_MOVIE_EXAMPLE: dict[str, Any] = {

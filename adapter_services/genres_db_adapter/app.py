@@ -13,6 +13,7 @@ mongo_client = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global mongo_client
+    app.state.db = None
     try:
         # Startup: create MongoDB connection
         mongo_client = get_mongo_client()
@@ -24,17 +25,13 @@ async def lifespan(app: FastAPI):
         yield
         
     except ConnectionFailure as e:
-        print(f"Failed to connect to MongoDB: {str(e)}")
-        raise HTTPException(
-            status_code=503,
-            detail="Database connection failed"
-        )
+        print(f"Failed to connect to MongoDB during startup, running in degraded mode: {str(e)}")
+        app.state.db = None
+        yield
     except ServerSelectionTimeoutError as e:
-        print(f"MongoDB server selection timeout: {str(e)}")
-        raise HTTPException(
-            status_code=503, 
-            detail="Database server not available"
-        )
+        print(f"MongoDB server selection timeout during startup, running in degraded mode: {str(e)}")
+        app.state.db = None
+        yield
     finally:
         # Shutdown: close MongoDB connection
         if mongo_client:

@@ -12,7 +12,7 @@ from shared.common.http_utils import make_request
 
 # Models
 class TMDBSettings(BaseModel):
-    """TMDB API configuration TMDBSettings"""
+    """TMDB API configuration Settings"""
 
     tmdb_url: str = Field(
         default="https://api.themoviedb.org/3/movie/", description="TMDB API base URL"

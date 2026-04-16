@@ -1,142 +1,166 @@
-import asyncio
-from functools import partial
-import json
-from typing import Any, Dict
-from fastapi import APIRouter, HTTPException, Depends, status
+from concurrent.futures import ThreadPoolExecutor
+from typing import Optional
+from fastapi import Depends, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-import httpx
-import requests
+from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
 
-class Settings(BaseModel):
-    """Configuration settings for external service endpoints."""
-    omdb_url: str = "http://omdb-adapter:5000/api/v1/find"
-    youtube_url: str = "http://youtube-adapter:5000/api/v1/get_video"
-    spotify_url: str = "http://spotify-adapter:5000/api/v1/search_playlist"
-    streaming_url: str = "http://streaming-availability-adapter:5000/api/v1/avail"
-    trivia_url: str = "http://groq-adapter:5000/api/v1/get_trivia"
-    timeout: float = 10.0
-    max_retries: int = 3
-    retry_delay: float = 1.0
+from shared.common.response import create_response
+from shared.common.http_utils import make_request
 
-def get_settings() -> Settings:
-    """Factory function for Settings dependency injection."""
-    return Settings()
+EXECUTOR = ThreadPoolExecutor(max_workers=4)
 
-async def fetch_data(url: str, params: dict = None, settings: Settings = None) -> Dict[str, Any]:
-    """Generic function to fetch data from external services with retry logic."""
-    for attempt in range(settings.max_retries):
-        try:
-            async with httpx.AsyncClient(timeout=settings.timeout) as client:
-                response = await client.get(url, params=params)
-                response.raise_for_status()
-                return response.json()
-        except httpx.HTTPStatusError as e:
-            try:
-                error_data = e.response.json()
-                return create_response(
-                    status_code=e.response.status_code,
-                    message=error_data.get('message', str(e)),
-                    data=error_data.get('data')
-                )
-            except ValueError:
-                return create_response(
-                    status_code=e.response.status_code,
-                    message=str(e)
-                )
-        except (httpx.ConnectError, httpx.TimeoutException) as e:
-            if attempt == settings.max_retries - 1:
-                return create_response(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    message="Service temporarily unavailable"
-                )
-            await asyncio.sleep(settings.retry_delay)
-    return None
 
-async def fetch_movie_services(omdb_data: dict, movie_id: str, settings: Settings) -> list:
-    """Fetch data from auxiliary movie services in parallel."""
-    fetch = partial(fetch_data, settings=settings)
-    tasks = [
-        fetch(settings.youtube_url, {"query": f"{omdb_data['Title']} trailer"}),
-        fetch(settings.spotify_url, {"playlist_name": omdb_data['Title']}),
-        fetch(settings.streaming_url, {"imdb_id": movie_id, "country": "it"}),
-        fetch(settings.trivia_url, {"movie_title": omdb_data['Title']})
-    ]
-    return await asyncio.gather(*tasks, return_exceptions=True)
+class MovieDetailsSettings(BaseModel):
+    omdb_url: str = "http://omdb-adapter:5000"
+    youtube_url: str = "http://youtube-adapter:5000"
+    spotify_url: str = "http://spotify-adapter:5000"
+    streaming_url: str = "http://streaming-availability-adapter:5000"
+    trivia_url: str = "http://llm-adapter:5000"
+    max_workers: int = 4
 
-def process_service_results(omdb_data: dict, results: list) -> dict:
-    """Process and combine results from all movie services."""
-    def extract_result(result):
-        if isinstance(result, JSONResponse):
-            content = result.body.decode()
-            return json.loads(content).get('data')
-        if isinstance(result, Exception):
-            return None
-        return result
 
-    return {
-        "omdb": omdb_data,
-        "youtube": extract_result(results[0]),
-        "spotify": extract_result(results[1]),
-        "streaming": extract_result(results[2]),
-        "trivia": extract_result(results[3])
-    }
+def get_settings() -> MovieDetailsSettings:
+    return MovieDetailsSettings()
 
-def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
-    """Create a standardized API response."""
-    content = {
-        "status": "success" if status_code < 400 else "error",
-        "message": message
-    }
-    if data:
-        content["data"] = data
-    return JSONResponse(content=content, status_code=status_code)
 
-async def get_movie_details(movie_id: str, settings: Settings = Depends(get_settings)) -> JSONResponse:
-    """Aggregate movie details with parallel fetching and error handling."""
+def _get_youtube_trailer(title: str, settings: MovieDetailsSettings) -> Optional[dict]:
+    """Fetch Youtube trailer for movie."""
     try:
-        # Get base movie data
-        omdb_response = await fetch_data(settings.omdb_url, {"id": movie_id}, settings)
-        
-        # Handle JSONResponse type responses (error cases)
-        if isinstance(omdb_response, JSONResponse):
-            return omdb_response
-            
-        if not omdb_response:
-            return create_response(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                message="OMDB service unavailable"
-            )
+        result = make_request(
+            f"{settings.youtube_url}/api/v1/get_video",
+            params={"query": f"{title} trailer"},
+        )
+        if result.get("status") == "error":
+            return None
+        return result.get("data")
+    except (HTTPError, ConnectionError, Timeout, RequestException):
+        return None
 
-        omdb_data = omdb_response["data"]
-        
-        # Rest of the function remains the same
-        results = await fetch_movie_services(omdb_data, movie_id, settings)
-        service_data = process_service_results(omdb_data, results)
-        
-        if all(v is None for v in service_data.values()):
-            return create_response(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                message="All services are currently unavailable"
-            )
 
-        success = not any(v is None for v in service_data.values())
-        return create_response(
-            status_code=status.HTTP_200_OK,
-            message="Movie details retrieved successfully" if success else "Movie details retrieved partially",
-            data={"movie_details": service_data}
+def _get_spotify_playlist(title: str, settings: MovieDetailsSettings) -> Optional[dict]:
+    """Fetch Spotify playlist for movie."""
+    try:
+        result = make_request(
+            f"{settings.spotify_url}/api/v1/search_playlist",
+            params={"playlist_name": title},
+        )
+        if result.get("status") == "error":
+            return None
+        return result.get("data")
+    except (HTTPError, ConnectionError, Timeout, RequestException):
+        return None
+
+
+def _get_streaming_availability(
+    imdb_id: str, settings: MovieDetailsSettings
+) -> Optional[dict]:
+    """Fetch streaming availability for movie."""
+    try:
+        result = make_request(
+            f"{settings.streaming_url}/api/v1/avail",
+            params={"imdb_id": imdb_id, "country": "it"},
+        )
+        if result.get("status") == "error":
+            return None
+        return result.get("data")
+    except (HTTPError, ConnectionError, Timeout, RequestException):
+        return None
+
+
+def _get_movie_trivia(title: str, settings: MovieDetailsSettings) -> Optional[dict]:
+    """Fetch AI trivia for movie."""
+    try:
+        result = make_request(
+            f"{settings.trivia_url}/api/v1/get_trivia", params={"movie_title": title}
+        )
+        if result.get("status") == "error":
+            return None
+        return result.get("data")
+    except (HTTPError, ConnectionError, Timeout, RequestException):
+        return None
+
+
+async def get_movie_details(
+    id: str = Query(..., description="IMDB movie ID", example="tt4154796"),
+    settings: MovieDetailsSettings = Depends(get_settings),
+) -> JSONResponse:
+    """Aggregate movie details from multiple services in parallel."""
+    try:
+        omdb_result = make_request(
+            f"{settings.omdb_url}/api/v1/find", params={"id": id}
         )
 
+        if omdb_result.get("status") == "error":
+            return create_response(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                message=omdb_result.get("message", "Failed to fetch movie data"),
+            )
+
+        movie_data = omdb_result.get("data", {})
+        movie_title = movie_data.get("Title", "")
+
+        # Parallel execution using ThreadPoolExecutor
+        futures = [
+            EXECUTOR.submit(_get_youtube_trailer, movie_title, settings),
+            EXECUTOR.submit(_get_spotify_playlist, movie_title, settings),
+            EXECUTOR.submit(_get_streaming_availability, id, settings),
+            EXECUTOR.submit(_get_movie_trivia, movie_title, settings),
+        ]
+
+        youtube_trailer, spotify_playlist, streaming, trivia = [
+            f.result() for f in futures
+        ]
+
+        service_data = {
+            "omdb": movie_data,
+            "youtube": youtube_trailer,
+            "spotify": spotify_playlist,
+            "streaming": streaming,
+            "trivia": trivia,
+        }
+
+        available_services = sum(1 for v in service_data.values() if v is not None)
+
+        if available_services == 0:
+            return create_response(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                message="All external services are currently unavailable",
+            )
+
+        message = (
+            "Movie details retrieved successfully"
+            if available_services == 5
+            else "Movie details retrieved partially"
+        )
+
+        return create_response(
+            status_code=status.HTTP_200_OK,
+            message=message,
+            data={"movie_details": service_data},
+        )
+
+    except HTTPError as e:
+        return create_response(
+            status_code=e.response.status_code, message=f"HTTP error occurred: {str(e)}"
+        )
+    except ConnectionError:
+        return create_response(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message="External service connection failed",
+        )
+    except Timeout:
+        return create_response(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            message="Request to external service timed out",
+        )
+    except RequestException as e:
+        return create_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message=f"Error fetching movie details: {str(e)}",
+        )
     except Exception as e:
         return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            message="An unexpected error occurred",
-            data={"error": str(e)}
+            message="Internal server error",
         )
-
-async def health_check():
-    """Health check endpoint."""
-    return create_response(
-        status_code=200,
-        message="Movie Details Service is up and running!"
-    )

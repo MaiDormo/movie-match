@@ -1,29 +1,25 @@
-from fastapi import Depends, Query, HTTPException, status
+from fastapi import Depends, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Dict, Any
+from requests.exceptions import HTTPError, ConnectionError, Timeout, RequestException
+from typing import Any, Optional
 import os
-import requests
 
-class Settings(BaseModel):
+from shared.common.http_utils import make_request
+from shared.common.response import create_response
+
+class StreamAvailSettings(BaseModel):
+    """Streaming Availability API configuration Settings"""
     stream_avail_url: str = "https://streaming-availability.p.rapidapi.com/shows"
-    stream_avail_api_key: str = os.getenv("STREAMING_AVAILABILITY_API_KEY")
+    stream_avail_api_key: Optional[str] = os.getenv("STREAMING_AVAILABILITY_API_KEY")
     stream_avail_host: str = "streaming-availability.p.rapidapi.com"
 
-def get_settings():
-    return Settings()
+def get_settings() -> StreamAvailSettings:
+    """Dependency Injection for Streaming Availability"""
+    return StreamAvailSettings()
 
-def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
-    """Create a standardized API response"""
-    content = {
-        "status": "success" if status_code < 400 else "error",
-        "message": message
-    }
-    if data:
-        content["data"] = data
-    return JSONResponse(content=content, status_code=status_code)
 
-def filter_data(stream_avail_data, country):
+def _filter_data(stream_avail_data: dict[str, Any], country: str) -> list[dict[str,Any]]:
     """Filter and extract relevant streaming availability data."""
     # Check if we have valid streaming options for the country
     if not stream_avail_data or 'streamingOptions' not in stream_avail_data or not stream_avail_data['streamingOptions']:
@@ -33,7 +29,7 @@ def filter_data(stream_avail_data, country):
     if not streaming_options:
         return []  # Return empty list if no options for this country
 
-    service_dict = {}  # Dictionary to track unique services
+    service_dict: dict[str, dict[str, Any]] = {}  # Dictionary to track unique services
     
     for stream_opts in streaming_options:
         service_name = stream_opts.get("service", {}).get("name", "Unknown")
@@ -60,7 +56,7 @@ def filter_data(stream_avail_data, country):
             existing_service["service_types"].append(service_type)
 
     # Update each service with the final type (sorted and concatenated)
-    result = []
+    result: list[dict[str, Any]] = []
     for service_name, service_data in service_dict.items():
         sorted_service_types = sorted(set(service_data["service_types"]))
         result.append({
@@ -73,93 +69,88 @@ def filter_data(stream_avail_data, country):
     # Create a sorted list by service_name
     return sorted(result, key=lambda x: x['service_name'])
 
-def make_request(url, headers, params, country) -> Dict | JSONResponse:
-    try:
-        response = requests.get(url, headers=headers, params=params)
-        response.raise_for_status()
-        filtered_response = filter_data(response.json(), country)
-        if 'Error' in response:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=response['Error']
-            )
-        return filtered_response
-    except requests.exceptions.HTTPError as e:
-        return create_response(
-            status_code=status.HTTP_404_NOT_FOUND,
-            message=f"HTTP error occurred: {str(e)}",
-        )
-    except requests.exceptions.ConnectionError as e:
-        return create_response(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            message="Connection error occurred",
-            data={"error": str(e)}
-        )
-    except requests.exceptions.Timeout as e:
-        return create_response(
-            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            message="Request timed out",
-            data={"error": str(e)}
-        )
-    except requests.exceptions.RequestException as e:
-        return create_response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            message="An error occurred while calling the Streaming Availability API",
-            data={"error": str(e)}
-        )
-    
+
+def _fetch_streaming_data(
+        imdb_id: str, country: str, settings: StreamAvailSettings
+) -> dict[str, Any]:
+    """fetch raw payload from Streaming Availability API"""
+    headers = {
+        "x-rapidapi-key": settings.stream_avail_api_key,
+        "x-rapidapi-host": settings.stream_avail_host,
+    }
+
+    url = f"{settings.stream_avail_url}/{imdb_id}"
+    params = {"country": country}
+
+    return make_request(url=url, headers=headers, params=params)
 
 async def get_movie_availability(
     imdb_id: str = Query(
         ...,
         description="IMDB ID of the movie",
-        example="tt0120338",
-        regex="^tt[0-9]{7,8}$"
+        examples=["tt0120338"],
+        pattern="^tt[0-9]{7,8}$"
     ),
     country: str = Query(
         ...,
         description="Two-letter country code (ISO 3166-1 alpha-2 (lowercase))",
-        example="us",
+        examples=["us"],
         min_length=2,
         max_length=2,
-        regex="^[a-z]{2}$"
+        pattern="^[a-z]{2}$"
     ),
-    settings: Settings = Depends(get_settings)
+    settings: StreamAvailSettings = Depends(get_settings)
 ) -> JSONResponse:
-    if not imdb_id or not country:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="IMDB ID and country are required"
-        )
+    
+    try:
+        raw_data = _fetch_streaming_data(imdb_id,country,settings)
+        services = _filter_data(raw_data, country)
 
-    headers = {
-        "x-rapidapi-key": settings.stream_avail_api_key,
-        "x-rapidapi-host": settings.stream_avail_host
-    }
-    url = f"{settings.stream_avail_url}/{imdb_id}"  # Updated endpoint with imdb_id in the path
-    params = {"country": country}  # Only country is needed as a query parameter
-
-    result = make_request(url, headers, params, country)
-
-    if not result:
+        if not services:
+            return create_response(
+                status_code=status.HTTP_404_NOT_FOUND,
+                message="No Streaming services found for this movie",
+            )
+        
         return create_response(
-            status_code=status.HTTP_404_NOT_FOUND,
-            message="Streaming availability not found for this movie"
+            status_code=status.HTTP_200_OK,
+            message="Streaming services retrieved successfully",
+            data={"services": services},
+        )
+
+    except HTTPError as e:
+        if e.response.status_code == 429:
+            return create_response(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                message="Streaming Availability API rate limit exceeded"
+            )
+        elif e.response.status_code == 401:
+            return create_response(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                message="Invalid Streaming Availability API credentials"
+            )
+        return create_response(
+            status_code=e.response.status_code,
+            message=f"Streaming Availability API error: {str(e)}"
+        )
+    except ConnectionError:
+        return create_response(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message="Streaming Availability service is currently unavailable"
         )
     
-    if isinstance(result,JSONResponse):
-        return result
-
-    return create_response(
-        status_code=status.HTTP_200_OK,
-        message="Streaming availability retrieved successfully",
-        data=result
-    )
+    except Timeout:
+        return create_response(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            message="Request to Streaming Availabiltiy API timed out"
+        )
     
+    except RequestException as e:
+        return create_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message=f"Failed to connect to Streaming Availability API: {str(e)}"
+        )
 
-async def health_check() -> JSONResponse:
-    """Health check endpoint"""
-    return create_response(
-        status_code=status.HTTP_200_OK,
-        message="STREAMING AVAILABILITY API Adapter is up and running!"
-    )
+
+
+    

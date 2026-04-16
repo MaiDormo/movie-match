@@ -1,11 +1,9 @@
-// Cache configuration
 const CACHE_CONFIG = {
     MOVIES_CACHE_KEY: 'moviesCache',
     GENRES_CACHE_KEY: 'genresCache',
-    CACHE_DURATION: 30 * 60 * 1000 // 30 minutes in milliseconds
+    CACHE_DURATION: 30 * 60 * 1000
 };
 
-// Cache utility functions
 const cacheUtils = {
     set(key, data) {
         const cacheEntry = {
@@ -32,63 +30,68 @@ const cacheUtils = {
     }
 };
 
+function renderMovies(movieGridElement, movies, userGenres = []) {
+    const existingSpinner = movieGridElement.querySelector('#loading-spinner');
+    movieGridElement.innerHTML = '';
 
-// Funzione per ricostruire la lista dei film nel div
-function renderMovies(movieListElement, movies, userGenres = []) {
-    // Salva lo spinner prima di resettare il contenuto
-    const spinner = document.getElementById('loading-spinner');
-    const spinnerParent = spinner.parentNode;
-    spinner.remove(); // Rimuove temporaneamente lo spinner
-    
-    movieListElement.innerHTML = ''; // Resetta il contenuto del div
-    movieListElement.appendChild(spinner); // Reinserisce lo spinner
-    
-    movies.forEach((movie, index) => {
-        // console.log(`Rendering movie ${index + 1}:`, {
-        //     title: movie.Title || movie.title,
-        //     id: movie.imdbID || movie.id,
-        //     genres: movie.genre_ids || movie.Genre,
-        //     fullMovieData: movie
-        // });
-        if (!movie) return; // Salta se il film non è valido
+    if (existingSpinner) {
+        movieGridElement.appendChild(existingSpinner);
+    }
 
-        const movieItem = document.createElement('div');
-        movieItem.classList.add('movie-item');
+    if (!movies || movies.length === 0) {
+        movieGridElement.innerHTML += `
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/>
+                </svg>
+                <h3>No movies found</h3>
+                <p>Try a different search term</p>
+            </div>
+        `;
+        return;
+    }
 
-        const posterUrl = movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/50x75';
-        const genreNames = (movie.genre_ids || [])
-            .map(id => {
-                const genre = userGenres.find(g => g.genreId === id);
-                return genre ? genre.name : null;
-            })
-            .filter(name => name) // Rimuove i valori null
-            .join(', ') || movie.Genre || 'N/A';
+    movies.forEach(movie => {
+        if (!movie) return;
 
-        movieItem.innerHTML = `
-            <img src="${posterUrl}" alt="${movie.Title || movie.title || 'Movie poster'}">
+        const movieCard = document.createElement('div');
+        movieCard.classList.add('movie-card');
+
+        const posterUrl = movie.Poster !== 'N/A' ? movie.Poster : '/static/images/no-poster.jpg';
+        const rating = movie.imdbRating || movie.vote_average || 'N/A';
+        const year = movie.Year || (movie.release_date ? movie.release_date.split('-')[0] : 'N/A');
+
+        movieCard.innerHTML = `
+            <img class="movie-poster" src="${posterUrl}" alt="${movie.Title || movie.title || 'Movie'}">
             <div class="movie-info">
-                <div class="title">${movie.Title || movie.title || 'Unknown'} (${movie.Year || (movie.release_date ? movie.release_date.split('-')[0] : 'N/A')})</div>
-                <div class="details">
-                    <div><strong>Genre:</strong> ${genreNames}</div>
-                    <div><strong>Rating:</strong> ${movie.imdbRating || movie.vote_average || 'N/A'}</div>
-                    <div><strong>IMDb:</strong> ${movie.imdbID || 'N/A'}</div>
+                <h3 class="movie-title">${movie.Title || movie.title || 'Unknown'}</h3>
+                <div class="movie-year">
+                    <span>${year}</span>
+                    ${rating !== 'N/A' ? `<span class="movie-rating">★ ${rating}</span>` : ''}
                 </div>
             </div>
         `;
 
-        movieItem.onclick = () => {
+        movieCard.onclick = () => {
             window.location.href = `/movie?id=${movie.imdbID || movie.id}`;
         };
 
-        movieListElement.appendChild(movieItem);
+        movieGridElement.appendChild(movieCard);
     });
 }
 
 async function loadMovies(query = '') {
-    const movieList = document.getElementById('movie-list');
+    const movieGrid = document.getElementById('movie-grid');
     const spinner = document.getElementById('loading-spinner');
     const searchInput = document.getElementById('search-input');
     const searchButton = document.getElementById('search-button');
+
+    console.log('Elements:', { movieGrid: !!movieGrid, spinner: !!spinner, searchInput: !!searchInput, searchButton: !!searchButton });
+
+    if (!movieGrid || !searchInput || !searchButton) {
+        console.error('Required elements not found');
+        return;
+    }
 
     const searchQuery = query || searchInput.value;
 
@@ -97,72 +100,73 @@ async function loadMovies(query = '') {
         return;
     }
 
-    // Check cache first
     const cacheKey = cacheUtils.getCacheKey(CACHE_CONFIG.MOVIES_CACHE_KEY, searchQuery);
     const cachedMovies = cacheUtils.get(cacheKey);
-    
+
     if (cachedMovies) {
-        renderMovies(movieList, cachedMovies);
+        renderMovies(movieGrid, cachedMovies);
         return;
     }
 
-    spinner.style.display = 'block';
+    if (spinner) spinner.style.display = 'flex';
     searchButton.disabled = true;
 
     try {
         const response = await fetch(`http://localhost:5017/api/v1/movies/search-by-text?query=${encodeURIComponent(searchQuery)}`);
         const data_json = await response.json();
 
-        if (!response.ok || data_json.status === 'fail') {
+        if (!response.ok || data_json.status === 'error') {
             throw new Error(data_json.message || 'Movies not found');
         }
 
-        // Cache the results
         cacheUtils.set(cacheKey, data_json.data.movie_list);
-        renderMovies(movieList, data_json.data.movie_list);
+        renderMovies(movieGrid, data_json.data.movie_list);
     } catch (error) {
         console.error('Error loading movies:', error);
-        movieList.innerHTML = '';
-        const errorMessage = document.createElement('div');
-        errorMessage.textContent = 'Error loading movies. Please try again.';
-        movieList.appendChild(errorMessage);
+        movieGrid.innerHTML = `
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+                <h3>Error loading movies</h3>
+                <p>${error.message}</p>
+            </div>
+        `;
     } finally {
         spinner.style.display = 'none';
         searchButton.disabled = false;
     }
 }
 
-// Funzione per scoprire film tramite generi
 async function discoverMoviesByGenre() {
-    const movieList = document.getElementById('movie-list');
+    const movieGrid = document.getElementById('movie-grid');
     const spinner = document.getElementById('loading-spinner');
     const searchButton = document.getElementById('search-button');
 
-    spinner.style.display = 'block';
+    spinner.style.display = 'flex';
     searchButton.disabled = true;
 
     try {
         const userGenres = await fetch(`http://localhost:5017/api/v1/user-genres?user_id=0b8ac00c-a52b-4649-bd75-699b49c00ce3`);
         const genresData = await userGenres.json();
-        
+
         const preferredGenres = genresData.data.user_genres
             .filter(genre => genre.isPreferred)
             .map(genre => genre.genreId)
             .join(',');
 
         if (!preferredGenres) {
-            alert('No preferred genres found!');
+            alert('No preferred genres found! Select some genres first.');
             spinner.style.display = 'none';
             searchButton.disabled = false;
             return;
         }
 
-        // Check cache first
         const cacheKey = cacheUtils.getCacheKey(CACHE_CONFIG.MOVIES_CACHE_KEY, `genres_${preferredGenres}`);
         const cachedMovies = cacheUtils.get(cacheKey);
-        
+
         if (cachedMovies) {
-            renderMovies(movieList, cachedMovies, genresData.data.user_genres);
+            renderMovies(movieGrid, cachedMovies, genresData.data.user_genres);
             spinner.style.display = 'none';
             searchButton.disabled = false;
             return;
@@ -175,34 +179,22 @@ async function discoverMoviesByGenre() {
         searchButton.disabled = false;
 
         if (data.status === "success" && data.data.movie_list) {
-            // Cache the results
             cacheUtils.set(cacheKey, data.data.movie_list);
-            renderMovies(movieList, data.data.movie_list, genresData.data.user_genres);
+            renderMovies(movieGrid, data.data.movie_list, genresData.data.user_genres);
         } else {
-            movieList.innerHTML = '';
-            const noMoviesMessage = document.createElement('div');
-            noMoviesMessage.textContent = 'No movies found.';
-            movieList.appendChild(noMoviesMessage);
+            renderMovies(movieGrid, []);
         }
     } catch (error) {
         console.error('Error discovering movies:', error);
         spinner.style.display = 'none';
         searchButton.disabled = false;
-        movieList.innerHTML = '';
-        const errorMessage = document.createElement('div');
-        errorMessage.textContent = 'Error discovering movies. Please try again.';
-        movieList.appendChild(errorMessage);
+        renderMovies(movieGrid, []);
     }
 }
-
-
-
-
 
 async function createGenres(userId) {
     const genreTagsContainer = document.getElementById('genre-tags');
 
-    // Check cache first
     const cacheKey = cacheUtils.getCacheKey(CACHE_CONFIG.GENRES_CACHE_KEY, userId);
     const cachedGenres = cacheUtils.get(cacheKey);
 
@@ -215,17 +207,11 @@ async function createGenres(userId) {
         const response = await fetch(`http://localhost:5017/api/v1/user-genres?user_id=${userId}`);
         const data = await response.json();
 
-        if (!response.ok) {
+        if (!response.ok || data.status === 'error') {
             throw new Error(data.message || 'Failed to fetch user genres');
         }
 
-        if (data.status === 'fail') {
-            throw new Error(data.message || 'Genres not found');
-        }
-
         const userGenres = data.data.user_genres;
-        
-        // Cache the results
         cacheUtils.set(cacheKey, userGenres);
         renderGenreTags(genreTagsContainer, userGenres, userId);
     } catch (error) {
@@ -255,7 +241,6 @@ function renderGenreTags(container, genres, userId) {
     setupConfirmButton(genres, userId);
 }
 
-// Helper function to setup confirm button
 function setupConfirmButton(genres, userId) {
     const confirmButton = document.getElementById('confirm-button');
     if (!confirmButton) return;
@@ -270,7 +255,6 @@ function setupConfirmButton(genres, userId) {
 
         if (selectedGenres.length > 0) {
             updateUserPreferences(userId, selectedGenres);
-            // Update cache after preferences change
             const cacheKey = cacheUtils.getCacheKey(CACHE_CONFIG.GENRES_CACHE_KEY, userId);
             const updatedGenres = genres.map(g => ({
                 ...g,
@@ -291,7 +275,7 @@ async function updateUserPreferences(userId, preferences) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify(preferences )
+            body: JSON.stringify(preferences)
         });
 
         const data = await response.json();
@@ -308,15 +292,33 @@ async function updateUserPreferences(userId, preferences) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, setting up search...');
     const searchButton = document.getElementById('search-button');
     const searchInput = document.getElementById('search-input');
-    const dropdownButton = document.getElementById('dropdown-button');
-    const dropdownMenu = document.getElementById('dropdown-menu');
+    const searchType = document.getElementById('search-type');
+
+    console.log('Elements found:', { searchButton: !!searchButton, searchInput: !!searchInput, searchType: !!searchType });
 
     let searchMode = 'title';
 
+    if (searchType) {
+        searchType.addEventListener('change', (e) => {
+            searchMode = e.target.value;
+            if (searchMode === 'genre') {
+                searchInput.placeholder = 'Click search to find by your favorite genres';
+                searchInput.disabled = true;
+                searchInput.value = '';
+            } else {
+                searchInput.placeholder = 'Search for a movie...';
+                searchInput.disabled = false;
+            }
+        });
+    }
+
     if (searchButton) {
+        console.log('Adding click listener to search button');
         searchButton.addEventListener('click', () => {
+            console.log('Search button clicked, mode:', searchMode);
             if (searchMode === 'genre') {
                 discoverMoviesByGenre();
             } else {
@@ -325,31 +327,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (dropdownButton && dropdownMenu) {
-        dropdownButton.addEventListener('click', () => {
-            dropdownMenu.classList.toggle('hidden');
-        });
-
-        dropdownMenu.addEventListener('click', (event) => {
-            if (event.target.tagName === 'LI') {
-                const selectedValue = event.target.getAttribute('data-value');
-                searchMode = selectedValue;
-                dropdownButton.textContent = event.target.textContent;
-                dropdownMenu.classList.add('hidden');
-
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
                 if (searchMode === 'genre') {
-                    searchInput.value = 'The search will be based on your favorite genres';
-                    searchInput.disabled = true;
+                    discoverMoviesByGenre();
                 } else {
-                    searchInput.value = '';
-                    searchInput.disabled = false;
+                    loadMovies();
                 }
-            }
-        });
-
-        document.addEventListener('click', (event) => {
-            if (!event.target.closest('.custom-dropdown')) {
-                dropdownMenu.classList.add('hidden');
             }
         });
     }

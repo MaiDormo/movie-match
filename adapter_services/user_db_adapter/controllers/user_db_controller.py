@@ -1,5 +1,5 @@
 import os
-from fastapi import Body, Request, status, Query, Depends
+from fastapi import Body, Request, status, Query, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Any
@@ -25,7 +25,12 @@ def get_settings():
 
 def get_user_collection(request: Request, settings: Settings = Depends(get_settings)) -> Collection:
     """Get MongoDB users collection from request app state."""
-    mongo_client = request.app.state.db
+    mongo_client = getattr(request.app.state, "db", None)
+    if mongo_client is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database connection is not available"
+        )
     return mongo_client[settings.db_name][settings.db_collection]
 
 def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:

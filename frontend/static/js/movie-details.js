@@ -1,7 +1,6 @@
-// Add this at the top of movie-details.js
 const CACHE_CONFIG = {
     MOVIE_DETAILS_CACHE_KEY: 'movieDetailsCache',
-    CACHE_DURATION: 30 * 60 * 1000 // 30 minutes in milliseconds
+    CACHE_DURATION: 30 * 60 * 1000
 };
 
 const cacheUtils = {
@@ -43,44 +42,29 @@ async function fetchMovieDetails(movieId) {
         // Check cache first
         const cachedDetails = cacheUtils.get(movieId);
         if (cachedDetails) {
-            updateMovieInfo(cachedDetails.movie_details.omdb || {});
-            if (cachedDetails.movie_details.youtube?.data?.embed_url) {
-                updateYouTubeTrailer(cachedDetails.movie_details.youtube);
-            }
-            updateSpotifyPlaylist(cachedDetails.movie_details.spotify);
-            updateStreamingAvailability(cachedDetails.movie_details.streaming);
-            if (cachedDetails.movie_details.trivia?.ai_question) {
-                updateTrivia(cachedDetails.movie_details.trivia);
-            }
+            renderMovieDetails(cachedDetails);
             return;
         }
 
-        const response = await fetch(`http://localhost:5005/api/v1/movie_details?movie_id=${movieId}`);
+        // Fetch from API
+        const response = await fetch(`http://localhost:5005/api/v1/movie_details?id=${movieId}`);
         const data = await response.json();
 
         if (!response.ok) {
             throw new Error(data.message || 'Failed to fetch movie details');
         }
 
-        if (data.status === 'fail' || !data.data?.movie_details) {
+        if (data.status === 'error' || !data.data?.movie_details) {
             throw new Error(data.message || 'Movie not found');
         }
 
         const movieDetails = data.data.movie_details;
 
         // Cache the results
-        cacheUtils.set(movieId, data.data);
+        cacheUtils.set(movieId, movieDetails);
 
-        // Update movie details with null checks
-        updateMovieInfo(movieDetails.omdb || {});
-        if (movieDetails.youtube?.data?.embed_url) {
-            updateYouTubeTrailer(movieDetails.youtube);
-        }
-        updateSpotifyPlaylist(movieDetails.spotify);
-        updateStreamingAvailability(movieDetails.streaming);
-        if (movieDetails.trivia?.ai_question) {
-            updateTrivia(movieDetails.trivia);
-        }
+        // Render
+        renderMovieDetails(movieDetails);
 
     } catch (error) {
         console.error('Error fetching movie details:', error);
@@ -88,166 +72,199 @@ async function fetchMovieDetails(movieId) {
     }
 }
 
-function updateMovieInfo(movie) {
-    const elements = {
-        title: document.getElementById("title"),
-        year: document.getElementById("year"),
-        director: document.getElementById("director"),
-        poster: document.getElementById("poster")
-    };
-
-    // Check if all required elements exist
-    if (!elements.title || !elements.year || !elements.director || !elements.poster) {
-        throw new Error('Required movie detail elements not found in the DOM');
+function renderMovieDetails(movieDetails) {
+    // Update Hero Background
+    if (movieDetails.omdb?.Poster && movieDetails.omdb.Poster !== 'N/A') {
+        const hero = document.getElementById('hero');
+        hero.style.setProperty('--hero-bg', `url(${movieDetails.omdb.Poster})`);
     }
 
-    // Update text content with fallbacks
-    elements.title.textContent = `${movie.Title || 'N/A'}`;
-    elements.year.textContent = `Year: ${movie.Year || 'N/A'}`;
-    elements.director.textContent = `Director(s): ${movie.Director || 'N/A'}`;
+    // Movie Info
+    updateMovieInfo(movieDetails.omdb);
+    
+    // YouTube Video
+    if (movieDetails.youtube?.embed_url) {
+        const iframe = document.getElementById('youtube-frame');
+        iframe.src = movieDetails.youtube.embed_url;
+    } else {
+        document.getElementById('video-section').style.display = 'none';
+    }
 
-    // Update poster
-    const posterUrl = movie.Poster !== 'N/A' ? movie.Poster : '/static/images/no-poster.jpg';
+    // Trivia
+    if (movieDetails.trivia?.question) {
+        updateTrivia(movieDetails.trivia);
+    } else {
+        document.querySelector('.trivia-card').style.display = 'none';
+    }
+
+    // Spotify
+    if (movieDetails.spotify?.spotify_url) {
+        updateSpotify(movieDetails.spotify);
+    } else {
+        document.getElementById('spotify-card').style.display = 'none';
+    }
+
+    // Streaming
+    if (movieDetails.streaming?.services?.length > 0) {
+        updateStreaming(movieDetails.streaming.services);
+    } else {
+        updateStreaming([]);
+    }
+}
+
+function updateMovieInfo(movie) {
+    const elements = {
+        title: document.getElementById('title'),
+        year: document.getElementById('year'),
+        rating: document.getElementById('rating'),
+        runtime: document.getElementById('runtime'),
+        type: document.getElementById('type'),
+        director: document.getElementById('director'),
+        poster: document.getElementById('poster'),
+        genres: document.getElementById('genres')
+    };
+
+    elements.title.textContent = movie.Title || 'N/A';
+    elements.year.textContent = movie.Year || 'N/A';
+    
+    if (movie.imdbRating && movie.imdbRating !== 'N/A') {
+        elements.rating.textContent = `★ ${movie.imdbRating}`;
+    } else {
+        elements.rating.style.display = 'none';
+    }
+
+    elements.runtime.textContent = movie.Runtime || '-- min';
+    elements.type.textContent = movie.Type || 'Movie';
+    
+    elements.director.querySelector('span').textContent = movie.Director || 'N/A';
+    
+    // Poster
+    const posterUrl = movie.Poster && movie.Poster !== 'N/A' 
+        ? movie.Poster 
+        : '/static/images/no-poster.jpg';
     elements.poster.src = posterUrl;
     elements.poster.alt = `${movie.Title} Poster`;
 
-    // Update background if possible
-    try {
-        updateBackground(posterUrl);
-    } catch (error) {
-        console.warn('Failed to update background:', error);
+    // Genres
+    if (movie.Genre && movie.Genre !== 'N/A') {
+        const genres = movie.Genre.split(',').map(g => g.trim());
+        elements.genres.innerHTML = genres.map(genre => 
+            `<span class="genre-tag">${genre}</span>`
+        ).join('');
     }
 }
 
-function updateYouTubeTrailer(youtubeData) {
-    const iframe = document.querySelector(".video-container iframe");
-    iframe.src = youtubeData.data.embed_url;
+function updateTrivia(trivia) {
+    const questionEl = document.getElementById('trivia-question');
+    const optionsEl = document.getElementById('trivia-options');
+    const feedbackEl = document.getElementById('trivia-feedback');
+
+    questionEl.textContent = trivia.question;
+    
+    // Map options array
+    const options = trivia.options || [];
+    const buttons = optionsEl.querySelectorAll('.trivia-button');
+    
+    // Reset buttons
+    buttons.forEach((btn, index) => {
+        btn.disabled = false;
+        btn.classList.remove('correct', 'wrong');
+        btn.textContent = options[index] || `Option ${index + 1}`;
+        btn.onclick = () => checkAnswer(index);
+    });
+
+    // Store correct answer index
+    const correctAnswer = trivia.correct_answer;
+    // Find which option matches the correct answer
+    const correctIndex = options.findIndex(opt => 
+        opt.toLowerCase() === correctAnswer.toLowerCase()
+    );
+    window.correctAnswerIndex = correctIndex >= 0 ? correctIndex : 0;
+    
+    feedbackEl.textContent = '';
+    feedbackEl.className = 'trivia-feedback';
 }
 
-function updateSpotifyPlaylist(spotifyData) {
-    const spotifyContainer = document.getElementById("spotify-container");
-    const coverImg = document.getElementById("spotify-cover");
-    const titleElement = document.getElementById("playlist-title");
-    const descElement = document.getElementById("playlist-description");
-    
-    if (!spotifyData || !spotifyData.data) {
-        coverImg.style.display = "none"; 
-        titleElement.textContent = "No playlist available";
-        descElement.textContent = "No playlist found for this movie";
-        spotifyContainer.style.cursor = 'default';
-        spotifyContainer.onclick = null;
-        return;
+function checkAnswer(selectedIndex) {
+    const buttons = document.querySelectorAll('.trivia-button');
+    const feedbackEl = document.getElementById('trivia-feedback');
+
+    buttons.forEach(btn => btn.disabled = true);
+
+    if (selectedIndex === window.correctAnswerIndex) {
+        buttons[selectedIndex].classList.add('correct');
+        feedbackEl.textContent = '🎉 Correct! Well done!';
+        feedbackEl.className = 'trivia-feedback correct';
+    } else {
+        buttons[selectedIndex].classList.add('wrong');
+        buttons[window.correctAnswerIndex].classList.add('correct');
+        feedbackEl.textContent = `❌ Wrong! The correct answer was: ${buttons[window.correctAnswerIndex].textContent}`;
+        feedbackEl.className = 'trivia-feedback wrong';
     }
-
-    coverImg.style.display = "block";
-    coverImg.src = spotifyData.data.cover_url || '/static/images/Spotify_Primary_Logo_RGB_White.png';
-    titleElement.textContent = spotifyData.data.name;
-    descElement.textContent = "Listen on Spotify";
-    spotifyContainer.style.cursor = 'pointer';
-    spotifyContainer.onclick = () => window.open(spotifyData.data.spotify_url, '_blank');
 }
 
-function updateStreamingAvailability(streamingData) {
-    const streamingDescription = document.getElementById('streaming-description');
+function updateSpotify(spotify) {
+    document.getElementById('spotify-cover').src = spotify.cover_url || 'https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_White.png';
+    document.getElementById('spotify-title').textContent = spotify.name || 'Movie Soundtrack';
+    document.getElementById('spotify-subtitle').textContent = 'Listen on Spotify';
     
-    // Handle null/undefined streaming data
-    if (!streamingData || !streamingData.data || streamingData.data.length === 0) {
-        streamingDescription.innerHTML = `
-            <div class="no-streaming-message" style="text-align: center; padding: 20px;">
-                <p>No streaming services available for this movie</p>
+    window.spotifyUrl = spotify.spotify_url;
+}
+
+function openSpotify() {
+    if (window.spotifyUrl) {
+        window.open(window.spotifyUrl, '_blank');
+    }
+}
+
+function updateStreaming(services) {
+    const container = document.getElementById('streaming-content');
+    
+    if (!services || services.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/>
+                </svg>
+                <p>No streaming services available</p>
             </div>
         `;
         return;
     }
 
-    // If we have data, display the streaming services
-    const availabilityList = streamingData.data.map(item => {
+    container.innerHTML = services.map(service => {
+        const typeClass = getStreamingTypeClass(service.service_type);
         return `
-            <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                <img src="${item.logo || ''}" alt="${item.service_name}" style="width: 100px; height: 100px; margin-right: 30px; margin-left: 20px;">
-                <a href="${item.link}" target="_blank" style="text-decoration: none;">
-                    <button class="streaming-button">
-                        ${item.service_type}
-                    </button>
-                </a>
-            </div>
+            <a href="${service.link}" target="_blank" class="streaming-item">
+                <img class="streaming-logo" src="${service.logo || ''}" alt="${service.service_name}" 
+                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23333%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23fff%22 font-size=%2230%22>▶</text></svg>'">
+                <span class="streaming-name">${service.service_name}</span>
+                <span class="streaming-type ${typeClass}">${service.service_type}</span>
+            </a>
         `;
     }).join('');
-
-    streamingDescription.innerHTML = availabilityList;
 }
 
-function updateTrivia(triviaData) {
-    const questionElement = document.getElementById("question");
-    const formattedQuestion = triviaData.ai_question.replace(/\n/g, "<br>");
-    questionElement.innerHTML = formattedQuestion;
-    window.correctAnswer = triviaData.ai_answer;
+function getStreamingTypeClass(type) {
+    if (!type) return '';
+    const t = type.toLowerCase();
+    if (t.includes('subscription') || t.includes('stream')) return 'subscribe';
+    if (t.includes('buy')) return 'buy';
+    if (t.includes('rent')) return 'rent';
+    return '';
 }
 
 function showError(message) {
-    const container = document.querySelector('.container');
-    if (!container) {
-        console.error('Error container not found');
-        return;
-    }
-
-    container.innerHTML = `
-        <div class="error-message">
-            <h2>Error</h2>
-            <p>${message}</p>
-            <button onclick="window.history.back()" class="back-button">Go Back</button>
-        </div>
-    `;
+    // Hide main content
+    document.querySelector('.hero').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'none';
+    
+    // Show error
+    const errorContainer = document.getElementById('error-container');
+    document.getElementById('error-message').textContent = message;
+    errorContainer.style.display = 'flex';
 }
 
-// Modifica sfondo in base ai colori del poster
-function updateBackground(posterUrl) {
-    const img = new Image();
-    img.src = posterUrl + "?not-from-cache-please"; // Aggiungi il parametro per evitare la cache
-    img.crossOrigin = "Anonymous";
-    img.onload = function () {
-        const colorThief = new ColorThief();
-        try {
-            const palette = colorThief.getPalette(img, 2); // Estrai i colori
-            if (palette && palette.length >= 2) {
-                const [color1, color2] = palette;
-                document.body.style.background = `linear-gradient(135deg, rgb(${color1.join(',')}) , rgb(${color2.join(',')}))`;
-                document.body.style.backgroundAttachment = 'fixed';
-            }
-        } catch (error) {
-            console.error("Errore nell'estrazione dei colori:", error);
-        }
-    };
-}
-
-function checkAnswer(selected) {
-    const feedback = document.getElementById("feedback");
-    const buttons = document.querySelectorAll(".trivia-button");
-
-    buttons.forEach(button => {
-        button.disabled = true;
-    });
-
-    const selectedButton = buttons[selected - 1];
-    selectedButton.style.backgroundColor = "#d35400";
-    selectedButton.style.color = "white";
-
-    if (String(selected) === window.correctAnswer) {
-        feedback.textContent = "Risposta corretta!";
-        feedback.style.color = "green";
-    } else {
-        feedback.textContent = `Risposta sbagliata. Quella corretta è: ${window.correctAnswer}`;
-        feedback.style.color = "red";
-    }
-}
-
-// Funzione per aprire il link della playlist
-function openSpotify() {
-    const spotifyContainer = document.getElementById("spotify-container");
-    const link = spotifyContainer.dataset.link;
-    if (link) {
-        window.open(link, "_blank");
-    } else {
-        console.error("Link Spotify non disponibile");
-    }
-}
+// Initialize with skeleton-like loading state
+document.getElementById('title').classList.add('skeleton', 'skeleton-text-lg');
+document.getElementById('year').classList.add('skeleton', 'skeleton-text-sm');

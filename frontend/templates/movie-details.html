@@ -3,61 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#ff4a3f">
+    <meta name="theme-color" content="#141414">
     <title>MovieMatch - Movie Details</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/movie-details.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- Movie Details -->
-        <div class="movie-details">
-            <div class="details">
-                <h1 id="title">Loading...</h1>
-                <h2 id="year">Loading...</h2>
-                <h2 id="director">Loading...</h2>
+    <!-- Hero Section -->
+    <div class="hero" id="hero">
+        <div class="hero-content">
+            <div class="poster-container">
+                <img id="poster" class="poster" src="/static/images/loading-poster.png" alt="Movie Poster">
             </div>
-            <img id="poster" class="poster" src="/static/images/loading.gif" alt="Loading...">
-            <div class="video-container">
-                <iframe width="560" height="315" title="YouTube video player" frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            <div class="movie-info">
+                <h1 id="title" class="movie-title">Loading...</h1>
+                <div class="movie-meta">
+                    <span id="year">...</span>
+                    <span id="rating" class="rating">--</span>
+                    <span id="runtime">-- min</span>
+                    <span id="type">Movie</span>
+                </div>
+                <div id="genres" class="genre-tags"></div>
+                <p id="director" class="director"><strong>Director:</strong> <span>Loading...</span></p>
             </div>
         </div>
+    </div>
 
-        <!-- Right Column containing Trivia, Spotify, and Streaming Availability -->
-        <div class="right-column">
-            <!-- Trivia -->
-            <div class="trivia">
-                <h1>Trivia</h1>
-                <p id="question">Caricamento domanda...</p>
-                <div id="options">
-                    <button class="trivia-button" onclick="checkAnswer(1)">1</button>
-                    <button class="trivia-button" onclick="checkAnswer(2)">2</button>
-                    <button class="trivia-button" onclick="checkAnswer(3)">3</button>
+    <!-- Video Section -->
+    <div class="video-section">
+        <div class="video-container">
+            <iframe id="youtube-frame" title="YouTube video" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <!-- Bento Grid Section -->
+    <div class="bento-section">
+        <div class="bento-grid">
+            <!-- Trivia - Large card (2x2) -->
+            <div class="bento-card bento-trivia">
+                <div class="card-header">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+                    <h2 class="card-title">Trivia Challenge</h2>
                 </div>
-                <p id="feedback" style="font-weight: bold; margin-top: 10px;"></p>
+                <p class="trivia-question" id="trivia-question">Loading question...</p>
+                <div class="trivia-options" id="trivia-options">
+                    <button class="trivia-button" onclick="checkAnswer(0)">Option 1</button>
+                    <button class="trivia-button" onclick="checkAnswer(1)">Option 2</button>
+                    <button class="trivia-button" onclick="checkAnswer(2)">Option 3</button>
+                </div>
+                <div id="trivia-feedback" class="trivia-feedback"></div>
             </div>
 
-            <!-- Spotify -->
-            <div class="spotify" id="spotify-container" onclick="openSpotify()">
-                <img id="spotify-cover" src="" alt="Playlist Cover">
-                <div class="playlist-info">
-                    <h2 id="playlist-title">Titolo Playlist</h2>
-                    <p id="playlist-description">Ascolta su Spotify</p>
+            <!-- Spotify - Square card -->
+            <div class="bento-card bento-spotify" id="spotify-card" onclick="openSpotify()">
+                <img id="spotify-cover" class="spotify-cover" src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_White.png" alt="Spotify">
+                <div class="spotify-info">
+                    <p class="spotify-title" id="spotify-title">No playlist available</p>
+                    <p class="spotify-subtitle" id="spotify-subtitle">Click to listen</p>
                 </div>
-                <img id="spotify-logo" class="spotify-logo"
-                    src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_White.png"
-                    alt="Spotify Logo">
+                <svg class="spotify-logo" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
             </div>
 
-            <!-- Streaming Availability -->
-            <div class="trivia">
-                <h1>Streaming Availability</h1>
-                <p id="streaming-description">Loading...</p>
+            <!-- Streaming - Wide card -->
+            <div class="bento-card bento-streaming">
+                <div class="card-header">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
+                    <h2 class="card-title">Streaming & Rent</h2>
+                </div>
+                <div id="streaming-content" class="streaming-grid">
+                    <div class="skeleton" style="height: 70px;"></div>
+                    <div class="skeleton" style="height: 70px;"></div>
+                    <div class="skeleton" style="height: 70px;"></div>
+                </div>
             </div>
         </div>
+    </div>
+
+    <!-- Error Container -->
+    <div class="error-container" id="error-container" style="display: none;">
+        <h1>Oops!</h1>
+        <p id="error-message">Something went wrong</p>
+        <button class="back-button" onclick="window.history.back()">Go Back</button>
     </div>
 
     <script src="/static/js/movie-details.js"></script>

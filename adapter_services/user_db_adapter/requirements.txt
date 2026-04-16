@@ -3,5 +3,6 @@ pydantic
 uvicorn
 python-dotenv
 pymongo
+certifi
 email-validator
 passlib[bcrypt]

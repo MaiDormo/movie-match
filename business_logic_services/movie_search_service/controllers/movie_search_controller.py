@@ -27,8 +27,10 @@ def get_settings() -> Settings:
     """
     return Settings()
 
-async def fetch_data(url: str, method: str = "GET", params: dict = None, settings: Settings = None) -> Dict[str, Any] | None:
+async def fetch_data(url: str, method: str = "GET", params: dict = None, settings: Settings | None = None) -> Dict[str, Any] | JSONResponse | None:
     """Generic function to fetch data from external services with retry logic."""
+    if not settings:
+        return None
     for attempt in range(settings.max_retries):
         try:
             async with httpx.AsyncClient(timeout=settings.timeout) as client:
@@ -72,7 +74,7 @@ def create_response(status_code: int, message: str, data: Dict[str, Any] = None)
     Returns:
         JSONResponse: Formatted API response
     """
-    content = {
+    content: Dict[str, Any] = {
         "status": "success" if status_code < 400 else "error",
         "message": message
     }
@@ -87,15 +89,25 @@ async def get_text_movie_search(query: str, settings: Settings = Depends(get_set
 
         if isinstance(movie_list_data, JSONResponse):
             return movie_list_data
+        
+        if not isinstance(movie_list_data, dict):
+            return create_response(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                message="Invalid response from movie service"
+            )
 
+        # Estrai i film dal wrapper "movies"
+        response_data = movie_list_data.get("data", {})
+        movies = response_data.get("movies", []) if isinstance(response_data, dict) else []
+        
         # Ordina i film per valutazione
-        movie_list_data.get("data").sort(key=lambda x: x["imdbRating"], reverse=True)
+        movies.sort(key=lambda x: x.get("imdbRating", 0), reverse=True)
 
         # Risposta di successo
         return create_response(
             status_code=status.HTTP_200_OK,
             message="Movies retrieved successfully",
-            data={"movie_list": movie_list_data.get("data", {})}
+            data={"movie_list": movies}
         )
 
     except Exception as e:
@@ -127,14 +139,20 @@ async def get_genre_movie_search(
 
         if isinstance(movie_list_data, JSONResponse):
             return movie_list_data
+        
+        if not isinstance(movie_list_data, dict):
+            return create_response(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                message="Invalid response from TMDB service"
+            )
 
-        if not movie_list_data or movie_list_data.get("status") != "success":
+        if movie_list_data.get("status") != "success":
             return create_response(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 message="TMDB service unavailable"
             )
 
-        movies = movie_list_data["data"]["movie_list"]
+        movies = movie_list_data.get("data", {}).get("movie_list", [])
         movie_details = []
 
         # Per ogni film, fai una chiamata all'endpoint per recuperare dettagli aggiuntivi
@@ -147,7 +165,7 @@ async def get_genre_movie_search(
                     settings=settings
                 )
 
-                if details_response.get("status") == "success":
+                if details_response and isinstance(details_response, dict) and details_response.get("status") == "success":
                     details = details_response["data"]["movie"]
 
                     # Crea un oggetto con i dati richiesti
@@ -197,22 +215,19 @@ async def get_user_genres(user_id: str, settings: Settings = Depends(get_setting
             fetch_data(url=settings.preferences_url, params={"id": user_id}, settings=settings),
             return_exceptions=True
         )
-        if not genres_data:
+        
+        # Check for exceptions or invalid responses
+        if isinstance(genres_data, Exception) or isinstance(genres_data, JSONResponse) or not isinstance(genres_data, dict):
             return create_response(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 message="GENRE DATABASE service unavailable"
             )
-        if not preferences_data:
+        
+        if isinstance(preferences_data, Exception) or isinstance(preferences_data, JSONResponse) or not isinstance(preferences_data, dict):
             return create_response(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 message="USER DATABASE service unavailable"
             )
-        
-        if isinstance(genres_data, JSONResponse):
-            return genres_data
-        
-        if isinstance(preferences_data, JSONResponse):
-            return preferences_data
 
         # Validazione e mapping dei dati
         if "genres" not in genres_data.get("data", {}):
@@ -221,21 +236,28 @@ async def get_user_genres(user_id: str, settings: Settings = Depends(get_setting
                 message="Invalid or missing genres data"
             )
 
-        if not preferences_data or "preferences" not in preferences_data.get("data", {}):
+        if "preferences" not in preferences_data.get("data", {}):
             return create_response(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 message="Invalid or missing user preferences data"
             )
 
+        # Estrai generi dal wrapper
+        genres_response = genres_data.get("data", {})
+        genres_list = genres_response.get("genres", []) if isinstance(genres_response, dict) else genres_response.get("data", {}).get("genres", [])
+        
+        # Estrai preferenze utente
+        preferences_response = preferences_data.get("data", {})
+        preferences = preferences_response.get("preferences", []) if isinstance(preferences_response, dict) else []
+
         genres = [
-            {"genreId": genre["genreId"], "name": genre["name"]}
-            for genre in genres_data["data"]["genres"]
+            {"genreId": genre.get("genreId"), "name": genre.get("name")}
+            for genre in genres_list
         ]
-        preferences = preferences_data["data"]["preferences"]
 
         # Combina i generi con le preferenze
         result = [
-            {**genre, "isPreferred": genre["genreId"] in preferences}
+            {**genre, "isPreferred": genre.get("genreId") in preferences}
             for genre in genres
         ]
 
@@ -282,7 +304,18 @@ async def update_user_preferences(
 
     try:
         response = await fetch_data(url=url, method="PUT", params=payload, settings=settings)
-        return response
+        if isinstance(response, JSONResponse):
+            return response
+        if isinstance(response, dict):
+            return create_response(
+                status_code=status.HTTP_200_OK,
+                message="Preferences updated successfully",
+                data=response
+            )
+        return create_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="Failed to update preferences"
+        )
     except Exception as e:
         return create_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

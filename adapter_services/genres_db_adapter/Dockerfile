@@ -1,8 +1,14 @@
 # Use an official Python runtime as a parent image
-FROM python:3.12-alpine
+FROM python:3.14-slim-bookworm
 
 # Set the working directory
 WORKDIR /genre_adapter
+
+# Ensure system CA certificates are available for outbound TLS (MongoDB Atlas)
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends ca-certificates \
+	&& update-ca-certificates \
+	&& rm -rf /var/lib/apt/lists/*
 
 # Copy the current directory contents into the container at /genre_adapter
 COPY . .
