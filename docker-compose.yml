@@ -16,6 +16,41 @@ x-health-check: &health-check
 
 # Services grouped by type
 services:
+# Internal PostregSQL DB
+  postgres-db:
+    <<: [*common-service]
+    image: postgres:18-alpine
+    container_name: postgres_container
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgrest:
+    <<: [*common-service]
+    image: postgrest/postgrest
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - PGRST_DB_URI=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}
+      - PGRST_DB_SCHEMA=public
+      - PGRST_DB_ANON_ROLE=${POSTGRES_USER}
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
   # External API Adapters
   omdb-adapter:
     <<: [*common-service, *health-check]
@@ -38,7 +73,7 @@ services:
       context: .
       dockerfile: ./shared/base.dockerfile
       args:
-        - SERVICE_DIR=adapter_services/streaming_availability_adapter
+        SERVICE_DIR: adapter_services/streaming_availability_adapter
     container_name: streaming-availability-adapter
     ports:
       - "5002:5000"
@@ -104,46 +139,6 @@ services:
     environment:
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
 
-  # Database Adapters
-  user-db-adapter:
-    <<: [*common-service, *health-check]
-    build:
-      context: ./adapter_services/user_db_adapter
-    container_name: user-db-adapter
-    ports:
-      - "5010:5000"
-    environment:
-      - ATLAS_URI=${ATLAS_URI}
-      - DB_NAME=${DB_NAME}
-    volumes:
-      - ./adapter_services/user_db_adapter:/user_db_adapter
-
-  genres-db-adapter:
-    <<: [*common-service, *health-check]
-    build:
-      context: ./adapter_services/genres_db_adapter
-    container_name: genres-db-adapter
-    ports:
-      - "5015:5000"
-    environment:
-      - ATLAS_URI=${ATLAS_URI}
-      - DB_NAME=${DB_NAME}
-    volumes:
-      - ./adapter_services/genres_db_adapter:/genres_db_adapter
-
-  # Email Services
-  email-check-adapter:
-    <<: [*common-service, *health-check]
-    build:
-      context: ./adapter_services/email_check_adapter
-    container_name: email-check-adapter
-    ports:
-      - "5011:5000"
-    environment:
-      - ABSTRACT_API_KEY=${ABSTRACT_API_KEY}
-    volumes:
-      - ./adapter_services/email_check_adapter:/email_check_adapter
-
   # Business Logic Services
   movie-details-service:
     <<: [*common-service, *health-check]
@@ -157,6 +152,17 @@ services:
       - "5005:5000"
     volumes:
       - ./business_logic_services/movie_details_service:/movie_details_service
+    depends_on:
+      omdb-adapter:
+        condition: service_started
+      youtube-adapter:
+        condition: service_started
+      spotify-adapter:
+        condition: service_started
+      streaming-availability-adapter:
+        condition: service_started
+      llm-adapter:
+        condition: service_started
 
   movie-search-service:
     <<: [*common-service, *health-check]
@@ -167,41 +173,9 @@ services:
       - "5016:5000"
     volumes:
       - ./business_logic_services/movie_search_service:/movie_search_service
-
-  valid-email-service:
-    <<: [*common-service, *health-check]
-    build:
-      context: ./business_logic_services/valid_email_service
-    container_name: valid-email-service
-    ports:
-      - "5012:5000"
-    volumes:
-      - ./business_logic_services/valid_email_service:/valid_email_service
-
-  # Process Centric Services
-  user-registration-service:
-    <<: [*common-service, *health-check]
-    build:
-      context: ./process_centric_services/user_registration_service
-    container_name: user-registration-service
-    ports:
-      - "5013:5000"
-    volumes:
-      - ./process_centric_services/user_registration_service:/user_registration_service
-  
-  user-login-service:
-    <<: [*common-service, *health-check]
-    build:
-      context: ./process_centric_services/user_login_service
-    container_name: user-login-service
-    ports:
-      - "5014:5000"
-    volumes:
-      - ./process_centric_services/user_login_service:/user_login_service
-    environment:
-      - SECRET_KEY=${SECRET_KEY}
-      - ALGORITHM=${ALGORITHM}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+    depends_on:
+      tmdb-adapter:
+        condition: service_started
 
   movie-match-service:
     <<: [*common-service, *health-check]
@@ -212,6 +186,27 @@ services:
       - "5017:5000"
     volumes:
       - ./process_centric_services/movie_match_service:/movie_match_service
+    depends_on:
+      movie-details-service:
+        condition: service_started
+      movie-search-service:
+        condition: service_started
+
+  vibe-service:
+    <<: [*common-service, *health-check]
+    build:
+      context: .
+      dockerfile: ./shared/base.dockerfile
+      args:
+        SERVICE_DIR: ./business_logic_services/vibe_mapping_service/
+    container_name: vibe-service
+    ports:
+      - "5018:5000"
+    volumes:
+      - ./business_logic_services/vibe_mapping_service:/vibe_mapping_service
+    depends_on:
+      movie-search-service:
+        condition: service_started
 
   # Frontend Services
   frontend:
@@ -234,3 +229,5 @@ networks:
 volumes:
   movie-match:
     name: movie-match-data
+  pg_data:
+

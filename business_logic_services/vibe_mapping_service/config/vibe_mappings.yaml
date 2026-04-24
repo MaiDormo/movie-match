@@ -1,0 +1,32 @@
+vibes:
+  exciting:
+    genres: [28, 12, 53]
+    description: "High-octane action and adventure"
+  romantic:
+    genres: [10749, 18]
+    description: "Love stories and emotional dramas"
+  chill:
+    genres: [35, 16, 10751]
+    description: "Lighthearted comedies and animation"
+  dark:
+    genres: [27, 53, 9648]
+    description: "Horror, thriller, mystery"
+  thoughtful:
+    genres: [99, 18, 36]
+    description: "Documentary, drama, history"
+  funny:
+    genres: [35, 10751]
+    description: "Comedy, family"
+  epic:
+    genres: [14, 28, 12]
+    description: "Fantasy, action, adventure"
+  tense:
+    genres: [53, 80, 18]
+    description: "Crime, drama, thriller"
+spin:
+  sort_options:
+    - popularity.desc
+    - vote_average.desc
+    - release_date.desc
+  page_range: [1, 5]
+  default_limit: 10

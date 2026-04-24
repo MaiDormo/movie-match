@@ -1,4 +1,4 @@
-FROM python:3.14-slim-bookworm AS builder
+FROM python:3.14-alpine AS builder
 
 ARG SERVICE_DIR
 WORKDIR /build
@@ -6,7 +6,7 @@ WORKDIR /build
 COPY ${SERVICE_DIR}/requirements.txt .
 RUN mkdir -p /install && pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-FROM python:3.14-slim-bookworm AS runtime
+FROM python:3.14-alpine AS runtime
 
 ARG SERVICE_DIR
 WORKDIR /app
@@ -19,4 +19,4 @@ COPY shared /app/shared
 COPY ${SERVICE_DIR} /app
 
 EXPOSE 5000
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000"]

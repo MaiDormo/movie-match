@@ -82,7 +82,7 @@ def _get_movie_trivia(title: str, settings: MovieDetailsSettings) -> Optional[di
 
 
 async def get_movie_details(
-    id: str = Query(..., description="IMDB movie ID", example="tt4154796"),
+    id: str = Query(..., description="IMDB movie ID", examples=["tt4154796"]),
     settings: MovieDetailsSettings = Depends(get_settings),
 ) -> JSONResponse:
     """Aggregate movie details from multiple services in parallel."""

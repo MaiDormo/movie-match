@@ -145,7 +145,7 @@ async def get_movie_details(
     id: str = Query(
         ...,
         description="IMDB movie ID",
-        example="tt4154796"
+        examples=["tt4154796"]
     ),
     settings: Settings = Depends(get_settings)
 ) -> JSONResponse:
@@ -156,7 +156,7 @@ async def get_user_genres(
     user_id: str = Query(
         ...,
         description="Unique identifier of the user",
-        example="0b8ac00c-a52b-4649-bd75-699b49c00ce3"
+        examples=["0b8ac00c-a52b-4649-bd75-699b49c00ce3"]
     ),
     settings: Settings = Depends(get_settings)
 ) -> JSONResponse:
@@ -167,12 +167,12 @@ async def update_user_genres(
     user_id: str = Query(
         ...,
         description="Unique identifier of the user",
-        example="0b8ac00c-a52b-4649-bd75-699b49c00ce3"
+        examples=["0b8ac00c-a52b-4649-bd75-699b49c00ce3"]
     ),
     preferences: list[int] = Query(
         ...,
         description="List of genre IDs to set as preferences",
-        example=[28, 35]
+        examples=[[28, 35]]
     ),
     settings: Settings = Depends(get_settings)
 ) -> JSONResponse:
@@ -187,7 +187,7 @@ async def get_movie_search_by_text(
     query: str = Query(
         ...,
         description="Movie title search query",
-        example="Avengers"
+        examples=["Avengers"]
     ),
     settings: Settings = Depends(get_settings)
 ) -> JSONResponse:
@@ -198,7 +198,7 @@ async def get_genre_movie_search_by_url(
     with_genres: str = Query(
         ...,
         description="Comma-separated genre IDs",
-        example="28,35"
+        examples=["28,35"]
     ),
     settings: Settings = Depends(get_settings)
 ) -> JSONResponse:

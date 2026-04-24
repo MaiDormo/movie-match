@@ -101,7 +101,9 @@ async def get_movie_imdb_id(
 
     try:
         response = make_request(
-            f"{TMDBSettings.tmdb_url}{id}", headers=headers, data={"language": language}
+            f"{TMDBSettings.tmdb_url}{id}",
+            headers=headers,
+            params={"language": language},
         )
         imdb_id = _filter_id(response)
 
@@ -155,7 +157,9 @@ async def get_movie(
 
     try:
         response = make_request(
-            f"{TMDBSettings.tmdb_url}{id}", headers=headers, data={"language": language}
+            f"{TMDBSettings.tmdb_url}{id}",
+            headers=headers,
+            params={"language": language},
         )
         movie_data = _filter_movie_data(response)
 

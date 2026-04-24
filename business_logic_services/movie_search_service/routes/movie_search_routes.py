@@ -1,12 +1,11 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from controllers.movie_search_controller import get_user_genres, get_text_movie_search, update_user_preferences, get_genre_movie_search, health_check
+from controllers.movie_search_controller import get_genre_movie_search, health_check
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Optional
 
 router = APIRouter()
 
-router = APIRouter()
 
 # Response Models
 class BaseResponse(BaseModel):
@@ -161,87 +160,6 @@ router.get(
         500: {"description": "Internal server error", "model": BaseResponse}
     }
 )(health_check)
-
-router.get(
-    "/api/v1/user_genres",
-    response_model=GenreList,
-    summary="Get user Genres",
-    description="Get a list of all the available genres, and for everyone of them the relative String description and whether it is one of the user's favorites",
-    responses={
-        200: {
-            "description": "Genres retrieved successfully", 
-            "model": GenreList
-        },
-        503: {
-            "description": "Service unavailable",
-            "model": BaseResponse,
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status": "error",
-                        "message": "GENRE DATABASE service unavailable"
-                    }
-                }
-            }
-        },
-        500: {
-            "description": "Internal server error",
-            "model": BaseResponseWithData
-        }
-    }
-)(get_user_genres)
-
-router.put(
-    "/api/v1/update_user_genres",
-    response_model=GenreList,
-    summary="Update user Genres",
-    description="Update the list of user favorite genres",
-    responses={
-        200: {
-            "description": "Genres updated successfully", 
-            "model": BaseResponseWithData,
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status": "success",
-                        "message": "User updated successfully",
-                        "data": {
-                            "_id": "0b8ac00c-a52b-4649-bd75-699b49c00ce3",
-                            "name": "John",
-                            "surname": "Doe",
-                            "email": "john.doe@example.com",
-                            "preferences": [
-                                12
-                            ],
-                            "password": "$2b$12$00EMiNPHr9vxnUcwUy.GpuHFW8083fr02/DaWMgILAnil6pvwzZsy"
-                        }
-                    }
-                }
-            }
-        },
-        500: {
-            "description": "Internal server error",
-            "model": BaseResponseWithData
-        }
-    }
-)(update_user_preferences)
-
-router.get(
-    "/api/v1/movie_search_text",
-    response_model=TextMovieList,
-    summary="Text search",
-    description="Get a list of movies by using a text search",
-    responses={
-        200: {
-            "description": "Movies list retrieved successfully", 
-            "model": TextMovieList
-        },
-        500: {
-            "description": "Internal server error",
-            "model": BaseResponseWithData
-        }
-    }
-)(get_text_movie_search)
 
 router.get(
     "/api/v1/movie_search_genre",

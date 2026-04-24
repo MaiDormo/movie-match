@@ -20,4 +20,4 @@ EXPOSE 5000
 ENV PORT=5000
 
 # Run app.py when the container launches
-CMD ["uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["python", "-m", "uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "5000"]

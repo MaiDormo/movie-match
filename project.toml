@@ -1,0 +1,14 @@
+[project]
+name = "movie-match"
+version = "0.1.0"
+python = ">=3.10"
+[tool.pyright]
+venvPath = "."
+pythonVersion = "3.14"
+python.extraPath = ["."]
+pythonpath = ["."]
+
+[tool.pyright.analysis]
+extraPaths = ["."]
+[tool.ruff]
+src = ["."]

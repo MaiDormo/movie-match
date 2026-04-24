@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import Lifespan
 
 from .errors import (
     validation_exception_handler,
@@ -11,9 +12,9 @@ from .errors import (
 from .logging import configure_logging
 
 
-def create_app(title: str, cors_origins: list[str]) -> FastAPI:
+def create_app(title: str, cors_origins: list[str], lifespan: Lifespan[FastAPI] | None = None) -> FastAPI:
     configure_logging()
-    app = FastAPI(title=title)
+    app = FastAPI(title=title, lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,
@@ -28,3 +29,4 @@ def create_app(title: str, cors_origins: list[str]) -> FastAPI:
     app.add_exception_handler(Exception, unhandled_exception_handler)
 
     return app
+

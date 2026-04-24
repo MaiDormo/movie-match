@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f0f0f">
+    <title>MovieMatch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/vibe.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">MovieMatch</a>
+    </header>
+
+    <div class="container">
+        <main>
+            <section class="hero">
+                <h1>What are you in the mood for?</h1>
+                <p>Pick vibes and we'll find movies tailored to your taste.</p>
+            </section>
+
+            <section class="vibe-section">
+                <h2>Vibes</h2>
+                <div id="vibe-list" class="vibe-list" role="group" aria-label="Vibes"></div>
+            </section>
+
+            <section class="actions">
+                <button id="discover-btn" class="btn" type="button" disabled>
+                    Find Movies
+                </button>
+                <p id="feedback" class="feedback"></p>
+            </section>
+
+            <section id="results-section" class="results" hidden>
+                <div class="results-header">
+                    <h2>Results</h2>
+                    <span id="result-count"></span>
+                </div>
+                <div id="loading-state" class="loading" hidden>
+                    <div class="spinner"></div>
+                    <p>Finding movies...</p>
+                </div>
+                <div id="empty-state" class="empty">
+                    <p>No movies found. Try different vibes.</p>
+                </div>
+                <div id="movie-grid" class="movie-grid"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/js/vibe.js"></script>
+</body>
+</html>

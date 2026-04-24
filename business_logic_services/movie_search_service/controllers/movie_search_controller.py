@@ -1,15 +1,13 @@
 import asyncio
-from functools import partial
 from typing import Any, Dict
-from fastapi import APIRouter, HTTPException, Depends, status, Query, Body
+from fastapi import Depends, status, Query, Body
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import httpx
 
 class Settings(BaseModel):
     """Configuration settings for external service endpoints."""
-    omdb_url: str = "http://omdb-adapter:5000/api/v1/search_info"
-    genres_url: str = "http://genres-db-adapter:5000/api/v1/genres"
+    genres_url: str = "http://postgrest:3000/genres"
     preferences_url: str = "http://user-db-adapter:5000/api/v1/user"
     tmdb_url: str = "http://tmdb-adapter:5000/api/v1/discover-movies"
     tmdb_movie_url: str = "http://tmdb-adapter:5000/api/v1/movie"
@@ -27,7 +25,7 @@ def get_settings() -> Settings:
     """
     return Settings()
 
-async def fetch_data(url: str, method: str = "GET", params: dict = None, settings: Settings | None = None) -> Dict[str, Any] | JSONResponse | None:
+async def fetch_data(url: str, method: str = "GET", params: dict | None = None, settings: Settings | None = None) -> Dict[str, Any] | JSONResponse | None:
     """Generic function to fetch data from external services with retry logic."""
     if not settings:
         return None
@@ -62,7 +60,7 @@ async def fetch_data(url: str, method: str = "GET", params: dict = None, setting
             await asyncio.sleep(settings.retry_delay)
     return None
     
-def create_response(status_code: int, message: str, data: Dict[str, Any] = None) -> JSONResponse:
+def create_response(status_code: int, message: str, data: Dict[str, Any] | None = None) -> JSONResponse:
     """
     Create a standardized API response.
     
@@ -81,41 +79,6 @@ def create_response(status_code: int, message: str, data: Dict[str, Any] = None)
     if data:
         content["data"] = data
     return JSONResponse(content=content, status_code=status_code)
-
-async def get_text_movie_search(query: str, settings: Settings = Depends(get_settings)) -> JSONResponse:
-    try:
-        # Ottieni generi e preferenze in parallelo
-        movie_list_data = await fetch_data(url=settings.omdb_url, params={"title": query}, settings=settings)
-
-        if isinstance(movie_list_data, JSONResponse):
-            return movie_list_data
-        
-        if not isinstance(movie_list_data, dict):
-            return create_response(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                message="Invalid response from movie service"
-            )
-
-        # Estrai i film dal wrapper "movies"
-        response_data = movie_list_data.get("data", {})
-        movies = response_data.get("movies", []) if isinstance(response_data, dict) else []
-        
-        # Ordina i film per valutazione
-        movies.sort(key=lambda x: x.get("imdbRating", 0), reverse=True)
-
-        # Risposta di successo
-        return create_response(
-            status_code=status.HTTP_200_OK,
-            message="Movies retrieved successfully",
-            data={"movie_list": movies}
-        )
-
-    except Exception as e:
-        return create_response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            message="An unexpected error occurred",
-            data={"error": str(e)}
-        )
 
 async def get_genre_movie_search(
     language: str = Query(...), 
@@ -199,131 +162,6 @@ async def get_genre_movie_search(
             message="An unexpected error occurred",
             data={"error": str(e)}
         )
-
-    
-    
-
-async def get_user_genres(user_id: str, settings: Settings = Depends(get_settings)) -> JSONResponse:
-    """
-    Combina generi e preferenze utente in un'unica risposta JSON.
-    Utilizza la funzione fetch_data per ottenere i dati con logica di retry.
-    """
-    try:
-        # Ottieni generi e preferenze in parallelo
-        genres_data, preferences_data = await asyncio.gather(
-            fetch_data(url=settings.genres_url, settings=settings),
-            fetch_data(url=settings.preferences_url, params={"id": user_id}, settings=settings),
-            return_exceptions=True
-        )
-        
-        # Check for exceptions or invalid responses
-        if isinstance(genres_data, Exception) or isinstance(genres_data, JSONResponse) or not isinstance(genres_data, dict):
-            return create_response(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                message="GENRE DATABASE service unavailable"
-            )
-        
-        if isinstance(preferences_data, Exception) or isinstance(preferences_data, JSONResponse) or not isinstance(preferences_data, dict):
-            return create_response(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                message="USER DATABASE service unavailable"
-            )
-
-        # Validazione e mapping dei dati
-        if "genres" not in genres_data.get("data", {}):
-            return create_response(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                message="Invalid or missing genres data"
-            )
-
-        if "preferences" not in preferences_data.get("data", {}):
-            return create_response(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                message="Invalid or missing user preferences data"
-            )
-
-        # Estrai generi dal wrapper
-        genres_response = genres_data.get("data", {})
-        genres_list = genres_response.get("genres", []) if isinstance(genres_response, dict) else genres_response.get("data", {}).get("genres", [])
-        
-        # Estrai preferenze utente
-        preferences_response = preferences_data.get("data", {})
-        preferences = preferences_response.get("preferences", []) if isinstance(preferences_response, dict) else []
-
-        genres = [
-            {"genreId": genre.get("genreId"), "name": genre.get("name")}
-            for genre in genres_list
-        ]
-
-        # Combina i generi con le preferenze
-        result = [
-            {**genre, "isPreferred": genre.get("genreId") in preferences}
-            for genre in genres
-        ]
-
-        # Risposta di successo
-        return create_response(
-            status_code=status.HTTP_200_OK,
-            message="Genres and user preferences retrieved successfully",
-            data={"user_genres": result}
-        )
-
-    except Exception as e:
-        return create_response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            message="An unexpected error occurred",
-            data={"error": str(e)}
-        )
-    
-async def update_user_preferences(
-    id: str = Query(
-        ...,
-        description="Unique identifier of the user whose preferences are to be updated",
-        example="0b8ac00c-a52b-4649-bd75-699b49c00ce3"
-    ),
-    preferences: list[int] = Body(
-        ...,
-        description="List of updated preference IDs",
-        example=[28, 35, 12]
-    ),
-    settings: Settings = Depends(get_settings)
-) -> JSONResponse:
-    """
-    Update user preferences by making a PUT request to the user service.
-
-    Args:
-        user_id (str): Unique identifier of the user.
-        preferences (list[int]): List of updated preference IDs.
-        settings (Settings): Dependency injection for service URLs.
-
-    Returns:
-        JSONResponse: A standardized API response indicating success or failure.
-    """
-    url = f"{settings.preferences_url}?id={id}"
-    payload = {"preferences": preferences}
-
-    try:
-        response = await fetch_data(url=url, method="PUT", params=payload, settings=settings)
-        if isinstance(response, JSONResponse):
-            return response
-        if isinstance(response, dict):
-            return create_response(
-                status_code=status.HTTP_200_OK,
-                message="Preferences updated successfully",
-                data=response
-            )
-        return create_response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            message="Failed to update preferences"
-        )
-    except Exception as e:
-        return create_response(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            message="An unexpected error occurred while updating preferences.",
-            data={"error:": str(e)+url}
-        )
-
-
 
 async def health_check():
     return create_response(
