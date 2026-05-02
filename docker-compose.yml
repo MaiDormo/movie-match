@@ -1,24 +1,7 @@
-# Define reusable config blocks for services
-x-common-service: &common-service
-  restart: unless-stopped
-  env_file:
-    - .env
-  networks:
-    - movie-match-network
-
-x-health-check: &health-check
-  healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:5000/"]
-    interval: 30s
-    timeout: 10s
-    retries: 3
-    start_period: 5s
-
 # Services grouped by type
 services:
 # Internal PostregSQL DB
   postgres-db:
-    <<: [*common-service]
     image: postgres:18-alpine
     container_name: postgres_container
     env_file:
@@ -29,188 +12,57 @@ services:
       - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  postgrest:
-    <<: [*common-service]
-    image: postgrest/postgrest
+  movie-core:
+    build:
+      context: ./movie-core/
+    container_name: movie-core
     ports:
-      - "3000:3000"
-    env_file:
-      - .env
+      - "5019:5000"
     environment:
-      - PGRST_DB_URI=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}
-      - PGRST_DB_SCHEMA=public
-      - PGRST_DB_ANON_ROLE=${POSTGRES_USER}
+      - TMDB_API_KEY=${TMDB_API_KEY}
+    volumes:
+      - ./movie-core:/movie-core
+
+  recommendation-svc:
+    build:
+      context: ./recommendation-svc/
+    container_name: recommendation-svc
+    ports:
+      - "5020:5000"
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - ./recommendation-svc:/recommendation-svc
     depends_on:
       postgres-db:
         condition: service_healthy
 
-  # External API Adapters
-  omdb-adapter:
-    <<: [*common-service, *health-check]
-    build:
-      context: .
-      dockerfile: ./shared/base.dockerfile
-      args:
-        SERVICE_DIR: adapter_services/omdb_adapter
-    container_name: omdb-adapter
-    ports:
-      - "5001:5000"
-    environment:
-      - OMDB_API_KEY=${OMDB_API_KEY}
-    volumes:
-      - ./adapter_services/omdb_adapter:/omdb_adapter
-  
-  streaming-availability-adapter:
-    <<: [*common-service, *health-check]
-    build:
-      context: .
-      dockerfile: ./shared/base.dockerfile
-      args:
-        SERVICE_DIR: adapter_services/streaming_availability_adapter
-    container_name: streaming-availability-adapter
-    ports:
-      - "5002:5000"
-    environment:
-      - STREAMING_AVAILABILITY_API_KEY=${STREAMING_AVAILABILITY_API_KEY}
-    volumes:
-      - ./adapter_services/streaming_availability_adapter:/streaming_availability_adapter
-    
-  tmdb-adapter:
-    <<: [*common-service, *health-check]
-    build:
-      context: .
-      dockerfile: ./shared/base.dockerfile
-      args:
-        SERVICE_DIR: adapter_services/tmdb_adapter
-    container_name: tmdb-adapter
-    ports:
-      - "5003:5000"
-    environment:
-      - TMDB_API_KEY=${TMDB_API_KEY}
-    volumes:
-      - ./adapter_services/tmdb_adapter:/tmdb_adapter
-     
-  spotify-adapter:
-    <<: [*common-service, *health-check]
-    build:
-      context: .
-      dockerfile: ./shared/base.dockerfile
-      args:
-        SERVICE_DIR: adapter_services/spotify_adapter
-    container_name: spotify-adapter
-    ports:
-      - "5004:5000"
-    environment:
-      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
-      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
 
-  llm-adapter:
-    <<: [*common-service, *health-check]
-    build:
-      context: .
-      dockerfile: ./shared/base.dockerfile
-      args:
-        SERVICE_DIR: adapter_services/llm_adapter
-    container_name: llm-adapter
-    ports:
-      - "5007:5000"
+  seeder:
+    build: ./recommendation-svc
+    command: python seed.py
     environment:
-      - CEREBRAS_API_KEY=${CEREBRAS_API_KEY}
-    volumes:
-      - ./adapter_services/llm_adapter:/llm_adapter
-
-  youtube-adapter:
-    <<: [*common-service, *health-check]
-    build:
-      context: .
-      dockerfile: ./shared/base.dockerfile
-      args:
-        SERVICE_DIR: adapter_services/youtube_adapter
-    container_name: youtube-adapter
-    ports:
-      - "5009:5000"
-    environment:
-      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
-
-  # Business Logic Services
-  movie-details-service:
-    <<: [*common-service, *health-check]
-    build:
-      context: .
-      dockerfile: ./shared/base.dockerfile
-      args:
-        SERVICE_DIR: ./business_logic_services/movie_details_service
-    container_name: movie-details-service
-    ports:
-      - "5005:5000"
-    volumes:
-      - ./business_logic_services/movie_details_service:/movie_details_service
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     depends_on:
-      omdb-adapter:
-        condition: service_started
-      youtube-adapter:
-        condition: service_started
-      spotify-adapter:
-        condition: service_started
-      streaming-availability-adapter:
-        condition: service_started
-      llm-adapter:
-        condition: service_started
-
-  movie-search-service:
-    <<: [*common-service, *health-check]
-    build:
-      context: ./business_logic_services/movie_search_service
-    container_name: movie-search-service
-    ports:
-      - "5016:5000"
-    volumes:
-      - ./business_logic_services/movie_search_service:/movie_search_service
-    depends_on:
-      tmdb-adapter:
-        condition: service_started
-
-  movie-match-service:
-    <<: [*common-service, *health-check]
-    build:
-      context: ./process_centric_services/movie_match_service
-    container_name: movie-match-service
-    ports:
-      - "5017:5000"
-    volumes:
-      - ./process_centric_services/movie_match_service:/movie_match_service
-    depends_on:
-      movie-details-service:
-        condition: service_started
-      movie-search-service:
-        condition: service_started
-
-  vibe-service:
-    <<: [*common-service, *health-check]
-    build:
-      context: .
-      dockerfile: ./shared/base.dockerfile
-      args:
-        SERVICE_DIR: ./business_logic_services/vibe_mapping_service/
-    container_name: vibe-service
-    ports:
-      - "5018:5000"
-    volumes:
-      - ./business_logic_services/vibe_mapping_service:/vibe_mapping_service
-    depends_on:
-      movie-search-service:
+      postgres-db:
+        condition: service_healthy
+      movie-core:
         condition: service_started
 
   # Frontend Services
   frontend:
-    <<: [*common-service, *health-check]
     build:
       context: ./frontend/
     container_name: frontend

@@ -1,7 +1,7 @@
 from fastapi import Depends, Query, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from typing import Dict, Any, List, Optional
+from typing import Any, List
 import os
 from requests.exceptions import ConnectionError, HTTPError, RequestException, Timeout
 import re
@@ -21,7 +21,7 @@ class TMDBSettings(BaseModel):
         default="https://api.themoviedb.org/3/discover/movie",
         description="TMDB discover endpoint",
     )
-    tmdb_api_key: Optional[str] = Field(
+    tmdb_api_key: str | None = Field(
         default=os.getenv("TMDB_API_KEY"), description="TMDB API key from environment"
     )
     external_source: str = Field(
@@ -42,7 +42,7 @@ def _is_valid_language(language: str) -> bool:
 
 
 # Data Filtering Functions
-def _filter_id(tmdb_data: dict) -> str:
+def _filter_id(tmdb_data: dict[str, Any]) -> str:
     """Extract IMDB ID from TMDB response"""
     if not tmdb_data.get("imdb_id"):
         raise HTTPException(
@@ -52,7 +52,7 @@ def _filter_id(tmdb_data: dict) -> str:
     return tmdb_data["imdb_id"]
 
 
-def _filter_movie_data(tmdb_data: dict) -> Dict[str, Any]:
+def _filter_movie_data(tmdb_data: dict) -> dict[str, Any]:
     """Filter and format movie data"""
     return {
         "Title": tmdb_data.get("title", "N/A"),
@@ -65,7 +65,7 @@ def _filter_movie_data(tmdb_data: dict) -> Dict[str, Any]:
     }
 
 
-def _filter_discover_movies(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _filter_discover_movies(results: List[dict[str, Any]]) -> List[dict[str, Any]]:
     """Filter and format discovered movies list"""
     return [
         {

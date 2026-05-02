@@ -1,0 +1,6 @@
+httpx
+uvicorn
+fastapi
+sqlalchemy
+asyncpg
+pydantic
