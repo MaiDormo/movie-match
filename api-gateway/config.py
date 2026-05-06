@@ -1,15 +1,15 @@
 from pydantic import BaseModel
 
 class EndpointConfig(BaseModel):
-    movieUrl: str = "http://movie-core:5000/v1/movie"
-    discoverUrl: str = "http://movie-core:5000/v1/discover"
-    vibeUrl: str = "http://recommendation-svc/v1/recommend/similar"
-    similarUrl: str = "http://recommendation-svc/v1/recommend/by-vibe"
-    posterUrl: str = "https://image.tmdb.org/t/p/original"
+    # Movie Core endpoints
+    movieCoreUrl: str = "http://movie-core:5000"
+    # Recommendation Service endpoints
+    recommendationUrl: str = "http://recommendation-svc:5000"
+    # Enrichment Service endpoint
+    enrichmentUrl: str = "http://enrichment-svc:5000"
 
 
 def get_endpoint_config() -> EndpointConfig:
     return EndpointConfig()
-
 
 

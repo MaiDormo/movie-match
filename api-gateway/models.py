@@ -1,35 +1,38 @@
+from typing import Optional
 from pydantic import BaseModel
 
 
-class Genres(BaseModel):
+class Genre(BaseModel):
     id: int
     name: str
+
 
 class Movie(BaseModel):
     id: int
     title: str
-    genres: list[Genres] | None = None
-    poster_path: str | None = None
-    backdrop_path: str | None = None
+    genres: list[Genre] | None = None
+    poster_path: Optional[str] = None
+    backdrop_path: Optional[str] = None
     original_language: str
     original_title: str
-    overview: str | None = None
+    overview: Optional[str] = None
     popularity: float
     release_date: str
     runtime: int
     vote_average: float
-    status: str | None = None
+    status: Optional[str] = None
 
 
 class DiscoverResult(BaseModel):
     id: int
     title: str
-    backdrop_path: str
+    backdrop_path: Optional[str] = None
     genre_ids: list[int]
     popularity: float
-    poster_path: str
+    poster_path: Optional[str] = None
     release_date: str
     vote_average: float
+
 
 class DiscoverResponse(BaseModel):
     page: int
@@ -41,12 +44,25 @@ class DiscoverResponse(BaseModel):
 class MovieRecommended(BaseModel):
     id: int
     title: str
-    poster_path: str | None = None
-    backdrop_path: str | None = None
+    poster_path: Optional[str] = None
+    backdrop_path: Optional[str] = None
     popularity: float
-    overview: str | None = None
-    release_date: str | None = None
-    status: str | None = None
+    overview: Optional[str] = None
+    release_date: Optional[str] = None
+    status: Optional[str] = None
+
 
 class MovieRecommendations(BaseModel):
     movies: list[MovieRecommended]
+
+
+class VibeList(BaseModel):
+    vibes: list[str]
+
+
+class EnrichmentResponse(BaseModel):
+    tmdb_id: int
+    youtube: Optional[dict] = None
+    spotify: Optional[dict] = None
+    trivia: Optional[dict] = None
+    streaming: Optional[dict] = None

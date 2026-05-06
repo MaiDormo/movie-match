@@ -1,5 +1,5 @@
 # base image
-FROM python:3.14-alpine
+FROM python:3.12-alpine
 
 # set the workdir
 WORKDIR /movie-core 

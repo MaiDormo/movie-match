@@ -3,6 +3,13 @@ const ENDPOINTS = {
     moviesByVibe: '/api/v1/vibe/movies'
 };
 
+// Map TMDB poster path to full URL
+function posterUrl(path) {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `https://image.tmdb.org/t/p/w500${path}`;
+}
+
 const CACHE_KEYS = {
     vibes: 'movieMatch:vibes',
     moviePrefix: 'movieMatch:vibeMovies:'
@@ -107,12 +114,13 @@ async function loadVibes() {
             throw new Error(payload.message || 'Failed to load vibes');
         }
 
-        const vibes = payload.data?.vibes;
+        // Handle both { vibes: [...] } and { data: { vibes: [...] } } formats
+        const vibes = payload.vibes || payload.data?.vibes;
         if (!Array.isArray(vibes)) throw new Error('Invalid vibes format');
 
-        state.vibes = vibes;
-        setCachedValue(CACHE_KEYS.vibes, vibes);
-        renderVibes(vibes);
+        state.vibes = vibes.map(v => ({ name: typeof v === 'string' ? v : v.name }));
+        setCachedValue(CACHE_KEYS.vibes, state.vibes);
+        renderVibes(state.vibes);
         setFeedback('Ready. Select vibes and hit Find Movies.', 'success');
     } catch (err) {
         if (!state.vibes.length) {
@@ -133,30 +141,32 @@ function renderMovies(movies) {
 
     const frag = document.createDocumentFragment();
     movies.forEach((movie) => {
-        const movieId = movie.imdbID || movie.id;
+        const movieId = movie.id || movie.imdbID;
         if (!movieId) return;
 
-        const title = movie.Title || movie.title || 'Unknown';
-        const rating = movie.imdbRating || movie.vote_average;
-        const year = movie.Year || (movie.release_date ? movie.release_date.slice(0, 4) : '');
+        const title = movie.title || movie.Title || 'Unknown';
+        const rating = movie.vote_average || movie.imdbRating;
+        const year = movie.release_date
+            ? movie.release_date.slice(0, 4)
+            : (movie.Year || '');
 
         const card = document.createElement('a');
         card.className = 'movie-card';
         card.href = `/movie?id=${encodeURIComponent(movieId)}`;
         card.tabIndex = 0;
 
-        const hasPoster = movie.Poster && movie.Poster !== 'N/A';
-        const poster = hasPoster
-            ? `<img class="poster" src="${escapeHtml(movie.Poster)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=poster-wrap style=background:var(--surface)><div style=display:grid;place-items:center;height:100%;color:var(--text-dim);font-size:0.75rem>No poster</div></div>'">`
+        const poster = posterUrl(movie.poster_path || movie.Poster);
+        const posterHtml = poster
+            ? `<img class="poster" src="${escapeHtml(poster)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=poster-wrap style=background:var(--surface)><div style=display:grid;place-items:center;height:100%;color:var(--text-dim);font-size:0.75rem>No poster</div></div>'">`
             : `<div class="poster-wrap" style="display:grid;place-items:center;height:100%;color:var(--text-dim);font-size:0.75rem">No poster</div>`;
 
         const ratingHtml = rating && rating !== 'N/A'
-            ? `<span class="movie-rating">★ ${escapeHtml(String(rating))}</span>`
+            ? `<span class="movie-rating">★ ${escapeHtml(String(rating).substring(0, 3))}</span>`
             : '';
 
         card.innerHTML = `
             <div class="poster-wrap">
-                ${poster}
+                ${posterHtml}
                 <div class="poster-overlay">${ratingHtml}</div>
             </div>
             <div class="movie-info">
@@ -213,7 +223,8 @@ async function discoverMovies() {
             throw new Error(payload.message || 'Failed to fetch movies');
         }
 
-        const movies = payload.data?.movie_list;
+        // Handle both { movies: [...] } and { data: { movie_list: [...] } } formats
+        const movies = payload.movies || payload.data?.movie_list;
         if (!Array.isArray(movies)) throw new Error('Invalid movies format');
 
         setCachedValue(cacheKey, movies);

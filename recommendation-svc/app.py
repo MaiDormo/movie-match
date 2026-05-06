@@ -79,6 +79,11 @@ async def recommend_similar(id: int = Query(..., description="movie id")):
     pass
 
 
+@app.get("/v1/vibes")
+async def get_vibes():
+    return {"vibes": sorted(VIBE_MAP.keys())}
+
+
 @app.get("/v1/recommend/by-vibe", response_model=MovieRecommendations)
 async def recommend_by_vibe(
         vibes: str = Query(..., description="Comma-separated vibe names"),

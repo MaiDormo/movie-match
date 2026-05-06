@@ -1,17 +1,9 @@
-# base image
-FROM python:3.14-alpine
+FROM python:3.12-alpine
 
-# set the workdir
-WORKDIR /api-gateway 
+WORKDIR /api-gateway
 
-# Copy the current directory contents into the container at /movie-core
 COPY . .
 
-RUN pip install --no-cache-dir -r requirements.txt 
-
-EXPOSE 5000
-
-ENV PORT=5000
+RUN pip install --no-cache-dir -r requirements.txt
 
 CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000"]
-

@@ -39,7 +39,6 @@ function getCache(id) {
             return null;
         }
         if (!p.data || typeof p.data !== 'object') return null;
-        if ('movie_details' in p.data) return null;
         return p.data;
     } catch {
         sessionStorage.removeItem(`${CACHE_KEY_PREFIX}${id}`);
@@ -63,7 +62,7 @@ function showError(msg) {
 }
 
 function renderInfo(omdb = {}) {
-    const title = omdb.Title || 'Unknown title';
+    const title = omdb.Title || omdb.title || 'Unknown title';
     document.title = title;
     els.title.textContent = title;
 
@@ -80,8 +79,9 @@ function renderInfo(omdb = {}) {
 
     els.plot.textContent = omdb.Plot && omdb.Plot !== 'N/A' ? omdb.Plot : '';
 
-    if (omdb.Poster && omdb.Poster !== 'N/A') {
-        els.poster.src = omdb.Poster;
+    const poster = omdb.Poster || (omdb.poster_path ? `https://image.tmdb.org/t/p/w500${omdb.poster_path}` : null);
+    if (poster) {
+        els.poster.src = poster;
         els.poster.alt = `${title} poster`;
         els.poster.hidden = false;
     } else {
@@ -181,13 +181,43 @@ async function load(id) {
     }
 
     try {
-        const res = await fetch(`${ENDPOINT}?id=${encodeURIComponent(id)}`);
-        const payload = await res.json();
-        if (!res.ok || payload.status === 'error') {
+        const [enrichmentRes, coreRes] = await Promise.all([
+            fetch(`${ENDPOINT}?id=${encodeURIComponent(id)}`),
+            fetch(`/api/v1/movie-core?id=${encodeURIComponent(id)}`)
+        ]);
+        
+        const payload = await enrichmentRes.json();
+        const corePayload = await coreRes.json();
+
+        if (!enrichmentRes.ok || payload.status === 'error') {
             throw new Error(payload.message || 'Could not load movie details');
         }
+        if (!coreRes.ok || corePayload.status === 'error') {
+            console.warn("Core movie data not found or failed, relying on enrichment fallback if possible");
+        }
 
-        const details = payload.data?.movie_details;
+        // Merge the two payloads. `corePayload` has the base movie details, `payload` has enrichment.
+        const genres = Array.isArray(corePayload.genres)
+            ? corePayload.genres.map(g => g.name).filter(Boolean).join(', ')
+            : '';
+            
+        let details = {
+            omdb: {
+                Title: corePayload.title || payload.title,
+                imdbID: corePayload.imdb_id || payload.imdb_id,
+                Year: corePayload.release_date ? corePayload.release_date.slice(0, 4) : '',
+                Runtime: corePayload.runtime ? `${corePayload.runtime} min` : '',
+                Genre: genres,
+                Poster: corePayload.poster_path ? `https://image.tmdb.org/t/p/w500${corePayload.poster_path}` : '',
+                imdbRating: corePayload.vote_average ? String(corePayload.vote_average.toFixed(1)) : '',
+                Plot: corePayload.overview || payload.overview || '',
+            },
+            youtube: payload.youtube,
+            spotify: payload.spotify,
+            trivia: payload.trivia,
+            streaming: payload.streaming,
+        };
+
         if (!details || typeof details !== 'object') {
             throw new Error('Invalid movie details');
         }

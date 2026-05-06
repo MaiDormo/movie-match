@@ -52,7 +52,27 @@ services:
     container_name: api-gateway
     ports:
       - "5021:5000"
-  
+    depends_on:
+      - movie-core
+      - recommendation-svc
+      - enrichment-svc
+
+  enrichment-svc:
+    build:
+      context: ./enrichment-svc/
+    container_name: enrichment-svc
+    environment:
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+      - CEREBRAS_API_KEY=${CEREBRAS_API_KEY}
+      - STREAMING_AVAILABILITY_API_KEY=${STREAMING_AVAILABILITY_API_KEY}
+    depends_on:
+      - movie-core
+    networks:
+      - default
+
   seeder:
     build: ./recommendation-svc
     command: python seed.py
@@ -77,6 +97,10 @@ services:
       - "80:5000"
     volumes:
       - ./frontend:/frontend
+    environment:
+      - API_GATEWAY_URL=http://api-gateway:5000
+    depends_on:
+      - api-gateway
 
 # Networks
 networks:
@@ -89,4 +113,3 @@ volumes:
   movie-match:
     name: movie-match-data
   pg_data:
-
