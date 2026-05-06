@@ -16,7 +16,7 @@ def build_genre_vector(genre_ids: list[int]) -> list[int]:
 
 async def fetch_movies(client: httpx.AsyncClient, page: int = 1):
     """Fetch movies from movie-core's discover endpoint."""
-    url = "http://movie-core:5000/api/v1/discover"
+    url = "http://movie-core:5000/v1/discover"
     params = {
         "language": "en-US",
         "with_genres": "",        # or fill with desired genres
@@ -36,7 +36,7 @@ async def seed():
     async with httpx.AsyncClient(timeout=30.0) as client:
         all_movies = []
         # For full seed, loop until total_pages; here just a few pages
-        for page in range(1,11):
+        for page in range(1,31):
             batch = await fetch_movies(client, page)
             all_movies.extend(batch)
 

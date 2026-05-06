@@ -45,7 +45,7 @@ async def health():
     }
     return payload
 
-@app.get("/api/v1/movie", status_code=200, response_model=TMDBMovie)
+@app.get("/v1/movie", status_code=200, response_model=TMDBMovie)
 async def getMovieDetails(
         tmdbID: int = Query(..., ge=1),
         language: str = Query(
@@ -90,15 +90,15 @@ async def getMovieDetails(
                 status_code=502,
                 detail="Upstream Service Error",
         ) 
-@app.get("/api/v1/discover", status_code=200, response_model=TMDBDiscoverResponse)
+@app.get("/v1/discover", status_code=200, response_model=TMDBDiscoverResponse)
 async def getMovieDiscovery(
     language: str = Query(
-                default="en-US",
+                ...,
                 pattern="^[a-z]{2}-[A-Z]{2}$",
                 description="Language code like en-US"
             ),
     with_genres: str = Query(...),
-    page: int = Query(default=1),
+    page: int = Query(...),
     config: TMDBConfig = Depends(getTMDBConfig),
     client: httpx.AsyncClient = Depends(get_http_client),
 ):
@@ -123,8 +123,7 @@ async def getMovieDiscovery(
 
         response.raise_for_status()
         data = response.json()
-        return TMDBDiscoverResponse(**data) # Validation & Serialization 
-
+        return TMDBDiscoverResponse(**data) # Validation & Serialization  
     except ValidationError as e:
         logger.critical("TMDB Response schema mismatch: %s", e)
         raise HTTPException(

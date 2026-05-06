@@ -46,10 +46,17 @@ services:
       postgres-db:
         condition: service_healthy
 
-
+  api-gateway:
+    build:
+      context: ./api-gateway/
+    container_name: api-gateway
+    ports:
+      - "5021:5000"
+  
   seeder:
     build: ./recommendation-svc
     command: python seed.py
+    container_name: seeder
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_USER=${POSTGRES_USER}

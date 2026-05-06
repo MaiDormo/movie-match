@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Float, Integer, String, ARRAY
 from sqlalchemy.orm import DeclarativeBase
-
+from pydantic import BaseModel
 
 class Base(DeclarativeBase):
     pass
@@ -19,3 +19,19 @@ class Movie(Base):
     overview = Column(String)
     release_date = Column(String)
     status = Column(String)
+
+
+# The class response from the API
+class MovieRecommended(BaseModel):
+    id: int
+    title: str
+    poster_path: str | None = None
+    backdrop_path: str | None = None
+    popularity: float
+    overview: str | None = None
+    release_date: str | None = None
+    status: str | None = None
+
+
+class MovieRecommendations(BaseModel):
+    movies: list[MovieRecommended]

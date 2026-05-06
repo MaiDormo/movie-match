@@ -5,7 +5,7 @@ class Genres(BaseModel):
     id: int
     name: str
 
-class TMDBMovie(BaseModel):
+class Movie(BaseModel):
     id: int
     title: str
     genres: list[Genres] | None = None
@@ -18,9 +18,10 @@ class TMDBMovie(BaseModel):
     release_date: str
     runtime: int
     vote_average: float
-    status: str
+    status: str | None = None
 
-class TMDBDiscoverResult(BaseModel):
+
+class DiscoverResult(BaseModel):
     id: int
     title: str
     backdrop_path: str
@@ -30,13 +31,22 @@ class TMDBDiscoverResult(BaseModel):
     release_date: str
     vote_average: float
 
-class TMDBDiscoverResponse(BaseModel):
+class DiscoverResponse(BaseModel):
     page: int
-    results: list[TMDBDiscoverResult]
+    results: list[DiscoverResult]
     total_pages: int
     total_results: int
 
 
+class MovieRecommended(BaseModel):
+    id: int
+    title: str
+    poster_path: str | None = None
+    backdrop_path: str | None = None
+    popularity: float
+    overview: str | None = None
+    release_date: str | None = None
+    status: str | None = None
 
-
-
+class MovieRecommendations(BaseModel):
+    movies: list[MovieRecommended]
