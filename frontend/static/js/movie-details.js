@@ -3,6 +3,7 @@ const CACHE_TTL_MS = 30 * 60 * 1000;
 const ENDPOINT = '/api/v1/movie-details';
 
 let correctAnswer = '';
+let originalCorrectAnswer = '';
 
 const els = {
     page: document.getElementById('details-page'),
@@ -109,7 +110,8 @@ function renderTrivia(t) {
     els.triviaFeedback.textContent = '';
     els.triviaFeedback.className = 'trivia-feedback';
 
-    correctAnswer = String(t.correct_answer || '').trim().toLowerCase();
+    originalCorrectAnswer = String(t.correct_answer || '').trim();
+    correctAnswer = originalCorrectAnswer.toLowerCase();
 
     els.triviaOptions.innerHTML = '';
     opts.forEach(opt => {
@@ -124,15 +126,44 @@ function renderTrivia(t) {
 
 function handleTrivia(btn, val) {
     [...els.triviaOptions.querySelectorAll('.trivia-btn')].forEach(b => b.disabled = true);
-    const ok = String(val).trim().toLowerCase() === correctAnswer;
+    
+    const valSanitized = String(val).trim().toLowerCase();
+    const correctSanitized = correctAnswer;
+    
+    let ok = valSanitized === correctSanitized;
+    if (!ok) {
+        if (correctSanitized.length <= 2) {
+            ok = valSanitized.startsWith(correctSanitized + '.') || valSanitized.startsWith(correctSanitized + ')');
+        } else {
+            ok = valSanitized.includes(correctSanitized) || correctSanitized.includes(valSanitized);
+        }
+    }
+               
     btn.classList.add(ok ? 'correct' : 'wrong');
     if (!ok) {
-        const correct = [...els.triviaOptions.querySelectorAll('.trivia-btn')]
-            .find(b => b.textContent.trim().toLowerCase() === correctAnswer);
-        if (correct) correct.classList.add('correct');
+        const correctBtn = [...els.triviaOptions.querySelectorAll('.trivia-btn')]
+            .find(b => {
+                const bVal = b.textContent.trim().toLowerCase();
+                let bOk = bVal === correctSanitized;
+                if (!bOk) {
+                    if (correctSanitized.length <= 2) {
+                        bOk = bVal.startsWith(correctSanitized + '.') || bVal.startsWith(correctSanitized + ')');
+                    } else {
+                        bOk = bVal.includes(correctSanitized) || correctSanitized.includes(bVal);
+                    }
+                }
+                return bOk;
+            });
+        if (correctBtn) correctBtn.classList.add('correct');
     }
-    els.triviaFeedback.textContent = ok ? 'Correct!' : 'Not quite.';
-    els.triviaFeedback.className = `trivia-feedback ${ok ? 'correct' : 'wrong'}`;
+    
+    if (ok) {
+        els.triviaFeedback.textContent = 'Correct!';
+        els.triviaFeedback.className = 'trivia-feedback correct';
+    } else {
+        els.triviaFeedback.innerHTML = `Not quite. The correct answer is: <strong>${escapeHtml(originalCorrectAnswer)}</strong>`;
+        els.triviaFeedback.className = 'trivia-feedback wrong';
+    }
 }
 
 function renderStreaming(s) {

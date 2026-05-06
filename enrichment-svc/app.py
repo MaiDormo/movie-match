@@ -146,7 +146,7 @@ async def _fetch_trivia(client: httpx.AsyncClient, settings: Settings, title: st
     system_prompt = (
         "You are a movie trivia expert API. Your only job is to generate a single, highly accurate "
         "trivia question based on the movie provided. Respond ONLY with valid JSON. Provide exactly "
-        "1 question, 3 options, and the exact string of the correct answer."
+        "1 question, 4 options (as full strings, not just letters), and the exact string of the correct answer (it MUST exactly match one of the options)."
     )
     llm_payload = {
         "model": settings.cerebras_model,
