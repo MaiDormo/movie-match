@@ -176,55 +176,6 @@ section h2 {
     border: 0;
 }
 
-/* Trivia */
-.trivia-question {
-    font-size: 1rem;
-    color: var(--text);
-    font-weight: 500;
-}
-
-.trivia-options {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.trivia-btn {
-    padding: 0.875rem 1rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    color: var(--text);
-    font-size: 0.9rem;
-    text-align: left;
-    cursor: pointer;
-    transition: all var(--transition);
-}
-
-.trivia-btn:hover:not(:disabled) {
-    background: var(--surface-hover);
-    border-color: var(--text-muted);
-}
-
-.trivia-btn.correct {
-    border-color: var(--highlight);
-    background: rgba(29,185,84,0.1);
-    color: var(--highlight);
-}
-
-.trivia-btn.wrong {
-    border-color: var(--error);
-    background: rgba(239,68,68,0.1);
-    color: var(--error);
-}
-
-.trivia-feedback {
-    font-size: 0.85rem;
-    min-height: 1.2rem;
-}
-.trivia-feedback.correct { color: var(--highlight); }
-.trivia-feedback.wrong { color: var(--error); }
-
 /* Streaming */
 .streaming-grid {
     display: flex;

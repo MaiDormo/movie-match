@@ -64,5 +64,4 @@ class EnrichmentResponse(BaseModel):
     tmdb_id: int
     youtube: Optional[dict] = None
     spotify: Optional[dict] = None
-    trivia: Optional[dict] = None
     streaming: Optional[dict] = None

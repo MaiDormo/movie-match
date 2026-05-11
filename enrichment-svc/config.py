@@ -16,10 +16,6 @@ class Settings(BaseModel):
     spotify_search_url: str = "https://api.spotify.com/v1/search"
     spotify_playlist_url: str = "https://api.spotify.com/v1/playlists"
 
-    cerebras_api_key: str | None = os.getenv("CEREBRAS_API_KEY")
-    cerebras_base_url: str = "https://api.cerebras.ai/v1"
-    cerebras_model: str = "llama3.1-8b"
-
     streaming_api_key: str | None = os.getenv("STREAMING_AVAILABILITY_API_KEY")
     streaming_api_host: str = "streaming-availability.p.rapidapi.com"
     streaming_api_url: str = "https://streaming-availability.p.rapidapi.com/shows"

@@ -1,6 +1,0 @@
-fastapi
-requests
-uvicorn
-pydantic
-httpx
-google-api-python-client

@@ -18,12 +18,6 @@ class SpotifyResult(BaseModel):
     name: Optional[str] = None
 
 
-class TriviaResult(BaseModel):
-    question: Optional[str] = None
-    options: Optional[list[str]] = None
-    correct_answer: Optional[str] = None
-
-
 class StreamingService(BaseModel):
     service_name: Optional[str] = None
     logo: Optional[str] = None
@@ -46,5 +40,4 @@ class EnrichmentResponse(BaseModel):
     vote_average: Optional[float] = None
     youtube: Optional[YouTubeResult] = None
     spotify: Optional[SpotifyResult] = None
-    trivia: Optional[TriviaResult] = None
     streaming: Optional[StreamingResult] = None

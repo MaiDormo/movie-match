@@ -2,9 +2,6 @@ const CACHE_KEY_PREFIX = 'movieMatch:movieDetails:';
 const CACHE_TTL_MS = 30 * 60 * 1000;
 const ENDPOINT = '/api/v1/movie-details';
 
-let correctAnswer = '';
-let originalCorrectAnswer = '';
-
 const els = {
     page: document.getElementById('details-page'),
     loading: document.getElementById('loading-state'),
@@ -17,10 +14,6 @@ const els = {
     plot: document.getElementById('plot'),
     trailerSection: document.getElementById('trailer-section'),
     youtubeFrame: document.getElementById('youtube-frame'),
-    triviaSection: document.getElementById('trivia-section'),
-    triviaQuestion: document.getElementById('trivia-question'),
-    triviaOptions: document.getElementById('trivia-options'),
-    triviaFeedback: document.getElementById('trivia-feedback'),
     streamingSection: document.getElementById('streaming-section'),
     streamingContent: document.getElementById('streaming-content'),
     spotifySection: document.getElementById('spotify-section'),
@@ -99,73 +92,6 @@ function renderTrailer(yt) {
     }
 }
 
-function renderTrivia(t) {
-    const opts = Array.isArray(t?.options) ? t.options : [];
-    if (!t?.question || !opts.length) {
-        els.triviaSection.hidden = true;
-        return;
-    }
-    els.triviaSection.hidden = false;
-    els.triviaQuestion.textContent = t.question;
-    els.triviaFeedback.textContent = '';
-    els.triviaFeedback.className = 'trivia-feedback';
-
-    originalCorrectAnswer = String(t.correct_answer || '').trim();
-    correctAnswer = originalCorrectAnswer.toLowerCase();
-
-    els.triviaOptions.innerHTML = '';
-    opts.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'trivia-btn';
-        btn.textContent = opt;
-        btn.addEventListener('click', () => handleTrivia(btn, opt));
-        els.triviaOptions.appendChild(btn);
-    });
-}
-
-function handleTrivia(btn, val) {
-    [...els.triviaOptions.querySelectorAll('.trivia-btn')].forEach(b => b.disabled = true);
-    
-    const valSanitized = String(val).trim().toLowerCase();
-    const correctSanitized = correctAnswer;
-    
-    let ok = valSanitized === correctSanitized;
-    if (!ok) {
-        if (correctSanitized.length <= 2) {
-            ok = valSanitized.startsWith(correctSanitized + '.') || valSanitized.startsWith(correctSanitized + ')');
-        } else {
-            ok = valSanitized.includes(correctSanitized) || correctSanitized.includes(valSanitized);
-        }
-    }
-               
-    btn.classList.add(ok ? 'correct' : 'wrong');
-    if (!ok) {
-        const correctBtn = [...els.triviaOptions.querySelectorAll('.trivia-btn')]
-            .find(b => {
-                const bVal = b.textContent.trim().toLowerCase();
-                let bOk = bVal === correctSanitized;
-                if (!bOk) {
-                    if (correctSanitized.length <= 2) {
-                        bOk = bVal.startsWith(correctSanitized + '.') || bVal.startsWith(correctSanitized + ')');
-                    } else {
-                        bOk = bVal.includes(correctSanitized) || correctSanitized.includes(bVal);
-                    }
-                }
-                return bOk;
-            });
-        if (correctBtn) correctBtn.classList.add('correct');
-    }
-    
-    if (ok) {
-        els.triviaFeedback.textContent = 'Correct!';
-        els.triviaFeedback.className = 'trivia-feedback correct';
-    } else {
-        els.triviaFeedback.innerHTML = `Not quite. The correct answer is: <strong>${escapeHtml(originalCorrectAnswer)}</strong>`;
-        els.triviaFeedback.className = 'trivia-feedback wrong';
-    }
-}
-
 function renderStreaming(s) {
     const services = Array.isArray(s?.services) ? s.services : [];
     if (!services.length) {
@@ -197,7 +123,6 @@ function renderSpotify(sp) {
 function render(details) {
     renderInfo(details.omdb || {});
     renderTrailer(details.youtube);
-    renderTrivia(details.trivia);
     renderStreaming(details.streaming);
     renderSpotify(details.spotify);
     els.loading.hidden = true;
@@ -245,7 +170,6 @@ async function load(id) {
             },
             youtube: payload.youtube,
             spotify: payload.spotify,
-            trivia: payload.trivia,
             streaming: payload.streaming,
         };
 

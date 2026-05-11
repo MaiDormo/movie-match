@@ -36,9 +36,16 @@ async def seed():
     async with httpx.AsyncClient(timeout=30.0) as client:
         all_movies = []
         # For full seed, loop until total_pages; here just a few pages
-        for page in range(1,31):
+        for page in range(1,41):
             batch = await fetch_movies(client, page)
             all_movies.extend(batch)
+
+        await asyncio.sleep(1)
+
+        for page in range(41,81):
+            batch = await fetch_movies(client, page)
+            all_movies.extend(batch)
+
 
     # 3. Upsert into DB using your sessionmaker
     async with AsyncSessionLocal() as session:

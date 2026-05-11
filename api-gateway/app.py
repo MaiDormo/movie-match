@@ -172,7 +172,7 @@ async def get_enrichment(
         endpoints: EndpointConfig = Depends(get_endpoint_config),
         client: httpx.AsyncClient = Depends(get_http_client),
 ):
-    """Get enriched movie data (YouTube, Spotify, LLM trivia, streaming)."""
+    """Get enriched movie data (YouTube, Spotify, streaming)."""
     try:
         response = await client.get(
             f"{endpoints.enrichmentUrl}/v1/enrich",

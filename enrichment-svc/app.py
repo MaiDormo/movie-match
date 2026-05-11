@@ -9,7 +9,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request
 import httpx
 
 from config import Settings, get_settings
-from models import EnrichmentResponse, YouTubeResult, SpotifyResult, TriviaResult, StreamingResult, StreamingService
+from models import EnrichmentResponse, YouTubeResult, SpotifyResult, StreamingResult, StreamingService
 
 logger = logging.getLogger("enrichment-svc")
 
@@ -139,60 +139,6 @@ async def _fetch_spotify(client: httpx.AsyncClient, settings: Settings, title: s
     )
 
 
-async def _fetch_trivia(client: httpx.AsyncClient, settings: Settings, title: str) -> Optional[TriviaResult]:
-    if not (settings.cerebras_api_key and title):
-        return None
-        
-    system_prompt = (
-        "You are a movie trivia expert API. Your only job is to generate a single, highly accurate "
-        "trivia question based on the movie provided. Respond ONLY with valid JSON. Provide exactly "
-        "1 question, 4 options (as full strings, not just letters), and the exact string of the correct answer (it MUST exactly match one of the options)."
-    )
-    llm_payload = {
-        "model": settings.cerebras_model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Generate a trivia question for the movie: '{title}'"},
-        ],
-        "response_format": {"type": "json_object"},
-        "temperature": 0.7,
-    }
-    
-    llm_data = await fetch_json(
-        client,
-        f"{settings.cerebras_base_url}/chat/completions",
-        method="POST",
-        headers={
-            "Authorization": f"Bearer {settings.cerebras_api_key}",
-            "Content-Type": "application/json",
-        },
-        data=json.dumps(llm_payload),
-    )
-    
-    content = None
-    if llm_data.get("choices"):
-        content = llm_data["choices"][0].get("message", {}).get("content")
-        
-    if content:
-        try:
-            trivia_payload = json.loads(content)
-            options = trivia_payload.get("options")
-            
-            # Handle cases where the LLM returns a dict instead of a list for options
-            # e.g., {'A': 'Maddy', 'B': 'Emily', 'C': 'Sarah'} -> ['Maddy', 'Emily', 'Sarah']
-            if isinstance(options, dict):
-                options = list(options.values())
-                
-            return TriviaResult(
-                question=trivia_payload.get("question"),
-                options=options,
-                correct_answer=trivia_payload.get("correct_answer"),
-            )
-        except json.JSONDecodeError:
-            return None
-    return None
-
-
 async def _fetch_streaming(client: httpx.AsyncClient, settings: Settings, imdb_id: str) -> Optional[StreamingResult]:
     if not (imdb_id and settings.streaming_api_key):
         return None
@@ -239,7 +185,7 @@ async def enrich_movie(
         client: httpx.AsyncClient = Depends(get_http_client),
         settings: Settings = Depends(get_settings),
 ):
-    """Enrich movie data with YouTube trailer, Spotify soundtrack, LLM trivia, and streaming availability."""
+    """Enrich movie data with YouTube trailer, Spotify soundtrack, and streaming availability."""
 
     if not settings.tmdb_api_key:
         raise HTTPException(status_code=500, detail="TMDB_API_KEY is not configured")
@@ -264,11 +210,10 @@ async def enrich_movie(
     # Step 2: Run all enrichment fetching concurrently
     youtube_task = _fetch_youtube(client, settings, title)
     spotify_task = _fetch_spotify(client, settings, title)
-    trivia_task = _fetch_trivia(client, settings, title)
     streaming_task = _fetch_streaming(client, settings, imdb_id)
 
-    results = await asyncio.gather(youtube_task, spotify_task, trivia_task, streaming_task)
-    youtube, spotify, trivia, streaming = results
+    results = await asyncio.gather(youtube_task, spotify_task, streaming_task)
+    youtube, spotify, streaming = results
 
     return EnrichmentResponse(
         tmdb_id=tmdb_id,
@@ -282,6 +227,5 @@ async def enrich_movie(
         vote_average=tmdb_data.get("vote_average"),
         youtube=youtube,
         spotify=spotify,
-        trivia=trivia,
         streaming=streaming,
     )
