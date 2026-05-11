@@ -1,6 +1,6 @@
 # Movie-Match 🎬
 
-This project started as a university project and was later refactored into a personal training ground for exploring different microservice architectures and technologies. It's built primarily with Python and FastAPI—chosen simply because they looked fun to learn and use!
+This project started as a university project and was later refactored into a personal training ground for exploring different microservice architectures and technologies. It's built primarily with Python and FastAPI, chosen simply because they looked fun to learn and use!
 
 ## Architecture Overview
 
