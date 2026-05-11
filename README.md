@@ -16,7 +16,7 @@ graph TD
     end
     
     subgraph Data
-        Rec --> DB
+        Rec --> DB[(PostgreSQL)]
         Enrich --> Core
     end
 ```
